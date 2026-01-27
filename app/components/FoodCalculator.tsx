@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { FOODS } from "@/lib/foods";
+import { useEffect, useState } from "react";
+import { getFoods, Food } from "@/lib/foodsApi";
 
 type Item = {
   id: string;
@@ -22,14 +22,34 @@ type Props = {
 };
 
 export default function FoodCalculator({ title, onTotalsChange }: Props) {
+  const [foods, setFoods] = useState<Food[]>([]);
+  const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Item[]>([]);
 
+  // Cargar alimentos desde Supabase
+  useEffect(() => {
+    const loadFoods = async () => {
+      try {
+        const data = await getFoods();
+        setFoods(data);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFoods();
+  }, []);
+
   const addItem = () => {
+    if (foods.length === 0) return;
+
     setItems((prev) => [
       ...prev,
       {
         id: crypto.randomUUID(),
-        foodId: FOODS[0].id,
+        foodId: foods[0].id,
         grams: 0,
       },
     ]);
@@ -49,15 +69,15 @@ export default function FoodCalculator({ title, onTotalsChange }: Props) {
 
   const totals = items.reduce(
     (acc, item) => {
-      const food = FOODS.find((f) => f.id === item.foodId);
+      const food = foods.find((f) => f.id === item.foodId);
       if (!food) return acc;
 
       const factor = item.grams / 100;
 
-      acc.kcal += food.kcal * factor;
-      acc.protein += food.protein * factor;
-      acc.carbs += food.carbs * factor;
-      acc.fat += food.fat * factor;
+      acc.kcal += food.kcal_100 * factor;
+      acc.protein += food.protein_100 * factor;
+      acc.carbs += food.carbs_100 * factor;
+      acc.fat += food.fat_100 * factor;
 
       return acc;
     },
@@ -72,38 +92,50 @@ export default function FoodCalculator({ title, onTotalsChange }: Props) {
     <section className="card space-y-4">
       <h3 className="text-white font-medium">{title}</h3>
 
-      {items.map((item) => (
-        <div key={item.id} className="grid grid-cols-2 gap-3">
-          <select
-            className="input"
-            value={item.foodId}
-            onChange={(e) =>
-              updateItem(item.id, "foodId", e.target.value)
-            }
-          >
-            {FOODS.map((food) => (
-              <option key={food.id} value={food.id}>
-                {food.name}
-              </option>
-            ))}
-          </select>
+      {loading && (
+        <p className="text-sm text-white/60">
+          Cargando alimentos…
+        </p>
+      )}
 
-          <input
-            type="number"
-            min="0"
-            className="input"
-            placeholder="Gramos"
-            value={item.grams}
-            onChange={(e) =>
-              updateItem(item.id, "grams", Number(e.target.value))
-            }
-          />
-        </div>
-      ))}
+      {!loading &&
+        items.map((item) => (
+          <div key={item.id} className="grid grid-cols-2 gap-3">
+            <select
+              className="input"
+              value={item.foodId}
+              onChange={(e) =>
+                updateItem(item.id, "foodId", e.target.value)
+              }
+            >
+              {foods.map((food) => (
+                <option key={food.id} value={food.id}>
+                  {food.name}
+                </option>
+              ))}
+            </select>
+
+            <input
+              type="number"
+              min="0"
+              className="input"
+              placeholder="Gramos"
+              value={item.grams}
+              onChange={(e) =>
+                updateItem(
+                  item.id,
+                  "grams",
+                  Number(e.target.value)
+                )
+              }
+            />
+          </div>
+        ))}
 
       <button
         onClick={addItem}
-        className="text-sm text-[var(--color-accent)]"
+        disabled={loading || foods.length === 0}
+        className="text-sm text-[var(--color-accent)] disabled:opacity-40"
       >
         + Añadir alimento
       </button>
@@ -111,9 +143,15 @@ export default function FoodCalculator({ title, onTotalsChange }: Props) {
       {items.length > 0 && (
         <div className="grid grid-cols-2 gap-3 text-sm pt-3 border-t border-white/10">
           <p className="text-white">Kcal: {totals.kcal.toFixed(0)}</p>
-          <p className="text-white">Prot: {totals.protein.toFixed(1)} g</p>
-          <p className="text-white">Carbs: {totals.carbs.toFixed(1)} g</p>
-          <p className="text-white">Grasas: {totals.fat.toFixed(1)} g</p>
+          <p className="text-white">
+            Proteína: {totals.protein.toFixed(1)} g
+          </p>
+          <p className="text-white">
+            Carbs: {totals.carbs.toFixed(1)} g
+          </p>
+          <p className="text-white">
+            Grasas: {totals.fat.toFixed(1)} g
+          </p>
         </div>
       )}
     </section>
