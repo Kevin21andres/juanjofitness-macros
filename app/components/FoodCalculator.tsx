@@ -22,10 +22,10 @@ export default function FoodCalculator({
 }: Props) {
   const [items, setItems] = useState<Item[]>([]);
 
-  // 🔹 Notificar cambios al padre (seguro)
+  // 🔹 Notificar cambios al padre
   useEffect(() => {
     onChange(items);
-  }, [items]); // onChange es estable (useCallback en el padre)
+  }, [items]);
 
   const addItem = () => {
     if (foods.length === 0) return;
@@ -40,6 +40,10 @@ export default function FoodCalculator({
     ]);
   };
 
+  const removeItem = (id: string) => {
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
   const updateItem = (
     id: string,
     field: "foodId" | "grams",
@@ -52,7 +56,7 @@ export default function FoodCalculator({
     );
   };
 
-  // 🔹 Totales SOLO para esta comida
+  // 🔹 Totales de esta comida
   const totals = items.reduce(
     (acc, item) => {
       const food = foods.find((f) => f.id === item.foodId);
@@ -71,58 +75,89 @@ export default function FoodCalculator({
   );
 
   return (
-    <section className="card space-y-4">
-      <h3 className="text-white font-medium">{title}</h3>
+    <section className="card space-y-5 h-full">
 
-      {items.map((item) => (
-        <div key={item.id} className="grid grid-cols-2 gap-3">
-          <select
-            className="input"
-            value={item.foodId}
-            onChange={(e) =>
-              updateItem(item.id, "foodId", e.target.value)
-            }
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-white font-medium">{title}</h3>
+        <span className="text-xs text-white/50">
+          {items.length} alimentos
+        </span>
+      </div>
+
+      {/* Alimentos */}
+      <div className="space-y-3">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="grid grid-cols-[1fr_90px_28px] gap-3 items-center"
           >
-            {foods.map((food) => (
-              <option key={food.id} value={food.id}>
-                {food.name}
-              </option>
-            ))}
-          </select>
+            <select
+              className="input"
+              value={item.foodId}
+              onChange={(e) =>
+                updateItem(item.id, "foodId", e.target.value)
+              }
+            >
+              {foods.map((food) => (
+                <option key={food.id} value={food.id}>
+                  {food.name}
+                </option>
+              ))}
+            </select>
 
-          <input
-            type="number"
-            min="0"
-            className="input"
-            placeholder="Gramos"
-            value={item.grams}
-            onChange={(e) =>
-              updateItem(item.id, "grams", Number(e.target.value))
-            }
-          />
-        </div>
-      ))}
+            <input
+              type="number"
+              min="0"
+              className="input text-right"
+              placeholder="g"
+              value={item.grams}
+              onChange={(e) =>
+                updateItem(
+                  item.id,
+                  "grams",
+                  Number(e.target.value)
+                )
+              }
+            />
 
+            <button
+              onClick={() => removeItem(item.id)}
+              className="text-white/40 hover:text-red-400 transition"
+              title="Eliminar alimento"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Acción */}
       <button
         onClick={addItem}
         disabled={foods.length === 0}
-        className="text-sm text-[var(--color-accent)] disabled:opacity-40"
+        className="text-sm text-[var(--color-accent)] hover:underline disabled:opacity-40"
       >
         + Añadir alimento
       </button>
 
+      {/* Totales */}
       {items.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 text-sm pt-3 border-t border-white/10">
-          <p className="text-white">Kcal: {totals.kcal.toFixed(0)}</p>
-          <p className="text-white">
-            Proteína: {totals.protein.toFixed(1)} g
-          </p>
-          <p className="text-white">
-            Carbs: {totals.carbs.toFixed(1)} g
-          </p>
-          <p className="text-white">
-            Grasas: {totals.fat.toFixed(1)} g
-          </p>
+        <div className="bg-[#0B0B0B] rounded-xl p-4 border border-white/10">
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <p className="text-white">
+              🔥 {totals.kcal.toFixed(0)} kcal
+            </p>
+            <p className="text-white">
+              🥩 {totals.protein.toFixed(1)} g
+            </p>
+            <p className="text-white">
+              🍚 {totals.carbs.toFixed(1)} g
+            </p>
+            <p className="text-white">
+              🥑 {totals.fat.toFixed(1)} g
+            </p>
+          </div>
         </div>
       )}
     </section>
