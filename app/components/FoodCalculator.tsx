@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FOODS } from "@/lib/foods";
+import { FOODS } from "/lib/foods";
 
 type Item = {
   foodId: string;
