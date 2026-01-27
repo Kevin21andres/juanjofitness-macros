@@ -1,18 +1,17 @@
 import Link from "next/link";
-import FoodCalculator from "@/app/components/FoodCalculator";
+import DietPlanner from "@/app/components/DietPlanner";
 
 export default function CalculatorPage() {
   return (
     <div className="min-h-screen bg-[#0B0B0B] p-6 space-y-6">
 
-      {/* HEADER */}
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-white">
             Calculadora de dieta
           </h1>
           <p className="text-sm text-white/60">
-            Cálculo de comidas y macros
+            Planificación por comidas
           </p>
         </div>
 
@@ -24,8 +23,7 @@ export default function CalculatorPage() {
         </Link>
       </header>
 
-      {/* CALCULADORA */}
-      <FoodCalculator />
+      <DietPlanner />
 
     </div>
   );

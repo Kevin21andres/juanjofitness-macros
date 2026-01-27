@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FOODS } from "@/lib/foods";
 
 type Item = {
@@ -9,12 +9,24 @@ type Item = {
   grams: number;
 };
 
-export default function FoodCalculator() {
+type Totals = {
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
+type Props = {
+  title: string;
+  onTotalsChange?: (totals: Totals) => void;
+};
+
+export default function FoodCalculator({ title, onTotalsChange }: Props) {
   const [items, setItems] = useState<Item[]>([]);
 
   const addItem = () => {
-    setItems([
-      ...items,
+    setItems((prev) => [
+      ...prev,
       {
         id: crypto.randomUUID(),
         foodId: FOODS[0].id,
@@ -30,9 +42,7 @@ export default function FoodCalculator() {
   ) => {
     setItems((prev) =>
       prev.map((item) =>
-        item.id === id
-          ? { ...item, [field]: value }
-          : item
+        item.id === id ? { ...item, [field]: value } : item
       )
     );
   };
@@ -54,11 +64,13 @@ export default function FoodCalculator() {
     { kcal: 0, protein: 0, carbs: 0, fat: 0 }
   );
 
+  useEffect(() => {
+    onTotalsChange?.(totals);
+  }, [totals, onTotalsChange]);
+
   return (
-    <section className="bg-[#111111] rounded-2xl p-6 border border-white/10 space-y-4">
-      <h2 className="text-lg font-medium text-white">
-        Calculadora de comida
-      </h2>
+    <section className="card space-y-4">
+      <h3 className="text-white font-medium">{title}</h3>
 
       {items.map((item) => (
         <div key={item.id} className="grid grid-cols-2 gap-3">
@@ -83,11 +95,7 @@ export default function FoodCalculator() {
             placeholder="Gramos"
             value={item.grams}
             onChange={(e) =>
-              updateItem(
-                item.id,
-                "grams",
-                Number(e.target.value)
-              )
+              updateItem(item.id, "grams", Number(e.target.value))
             }
           />
         </div>
@@ -95,40 +103,17 @@ export default function FoodCalculator() {
 
       <button
         onClick={addItem}
-        className="bg-[var(--color-accent)] px-4 py-2 rounded-lg text-white font-medium hover:brightness-110 transition"
+        className="text-sm text-[var(--color-accent)]"
       >
         + Añadir alimento
       </button>
 
       {items.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 text-sm pt-4 border-t border-white/10">
-          <div className="card">
-            <p className="text-white/60">Calorías</p>
-            <p className="text-xl font-semibold text-white">
-              {totals.kcal.toFixed(0)} kcal
-            </p>
-          </div>
-
-          <div className="card">
-            <p className="text-white/60">Proteínas</p>
-            <p className="text-xl font-semibold text-white">
-              {totals.protein.toFixed(1)} g
-            </p>
-          </div>
-
-          <div className="card">
-            <p className="text-white/60">Carbohidratos</p>
-            <p className="text-xl font-semibold text-white">
-              {totals.carbs.toFixed(1)} g
-            </p>
-          </div>
-
-          <div className="card">
-            <p className="text-white/60">Grasas</p>
-            <p className="text-xl font-semibold text-white">
-              {totals.fat.toFixed(1)} g
-            </p>
-          </div>
+        <div className="grid grid-cols-2 gap-3 text-sm pt-3 border-t border-white/10">
+          <p className="text-white">Kcal: {totals.kcal.toFixed(0)}</p>
+          <p className="text-white">Prot: {totals.protein.toFixed(1)} g</p>
+          <p className="text-white">Carbs: {totals.carbs.toFixed(1)} g</p>
+          <p className="text-white">Grasas: {totals.fat.toFixed(1)} g</p>
         </div>
       )}
     </section>
