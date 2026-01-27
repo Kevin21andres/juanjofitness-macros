@@ -3,44 +3,47 @@
 import { useEffect, useState } from "react";
 import { getFoods, Food } from "@/lib/foodsApi";
 
-type Item = {
+export type Item = {
   id: string;
   foodId: string;
   grams: number;
 };
 
-type Totals = {
-  kcal: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-};
-
 type Props = {
   title: string;
-  onTotalsChange?: (totals: Totals) => void;
+  onChange: (items: Item[]) => void;
 };
 
-export default function FoodCalculator({ title, onTotalsChange }: Props) {
+export default function FoodCalculator({ title, onChange }: Props) {
   const [foods, setFoods] = useState<Food[]>([]);
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Item[]>([]);
 
-  // Cargar alimentos desde Supabase
+  // 🔹 Cargar alimentos (una sola vez)
   useEffect(() => {
+    let mounted = true;
+
     const loadFoods = async () => {
       try {
         const data = await getFoods();
-        setFoods(data);
+        if (mounted) setFoods(data);
       } catch (e) {
-        console.error(e);
+        console.error("Error cargando alimentos:", e);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     loadFoods();
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  // ✅ Notificar cambios al padre (SIN LOOP)
+  useEffect(() => {
+    onChange(items);
+  }, [items]); // ⚠️ NO incluir onChange
 
   const addItem = () => {
     if (foods.length === 0) return;
@@ -67,6 +70,7 @@ export default function FoodCalculator({ title, onTotalsChange }: Props) {
     );
   };
 
+  // 🔹 Totales SOLO para mostrar
   const totals = items.reduce(
     (acc, item) => {
       const food = foods.find((f) => f.id === item.foodId);
@@ -84,18 +88,12 @@ export default function FoodCalculator({ title, onTotalsChange }: Props) {
     { kcal: 0, protein: 0, carbs: 0, fat: 0 }
   );
 
-  useEffect(() => {
-    onTotalsChange?.(totals);
-  }, [totals, onTotalsChange]);
-
   return (
     <section className="card space-y-4">
       <h3 className="text-white font-medium">{title}</h3>
 
       {loading && (
-        <p className="text-sm text-white/60">
-          Cargando alimentos…
-        </p>
+        <p className="text-sm text-white/60">Cargando alimentos…</p>
       )}
 
       {!loading &&
@@ -122,11 +120,7 @@ export default function FoodCalculator({ title, onTotalsChange }: Props) {
               placeholder="Gramos"
               value={item.grams}
               onChange={(e) =>
-                updateItem(
-                  item.id,
-                  "grams",
-                  Number(e.target.value)
-                )
+                updateItem(item.id, "grams", Number(e.target.value))
               }
             />
           </div>
