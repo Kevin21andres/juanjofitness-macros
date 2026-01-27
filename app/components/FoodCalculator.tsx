@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getFoods, Food } from "@/lib/foodsApi";
+import { Food } from "@/lib/foodsApi";
 
 export type Item = {
   id: string;
@@ -11,39 +11,21 @@ export type Item = {
 
 type Props = {
   title: string;
+  foods: Food[];
   onChange: (items: Item[]) => void;
 };
 
-export default function FoodCalculator({ title, onChange }: Props) {
-  const [foods, setFoods] = useState<Food[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function FoodCalculator({
+  title,
+  foods,
+  onChange,
+}: Props) {
   const [items, setItems] = useState<Item[]>([]);
 
-  // 🔹 Cargar alimentos (una sola vez)
-  useEffect(() => {
-    let mounted = true;
-
-    const loadFoods = async () => {
-      try {
-        const data = await getFoods();
-        if (mounted) setFoods(data);
-      } catch (e) {
-        console.error("Error cargando alimentos:", e);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    loadFoods();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // ✅ Notificar cambios al padre (SIN LOOP)
+  // 🔹 Notificar cambios al padre (seguro)
   useEffect(() => {
     onChange(items);
-  }, [items]); // ⚠️ NO incluir onChange
+  }, [items]); // onChange es estable (useCallback en el padre)
 
   const addItem = () => {
     if (foods.length === 0) return;
@@ -70,7 +52,7 @@ export default function FoodCalculator({ title, onChange }: Props) {
     );
   };
 
-  // 🔹 Totales SOLO para mostrar
+  // 🔹 Totales SOLO para esta comida
   const totals = items.reduce(
     (acc, item) => {
       const food = foods.find((f) => f.id === item.foodId);
@@ -92,43 +74,38 @@ export default function FoodCalculator({ title, onChange }: Props) {
     <section className="card space-y-4">
       <h3 className="text-white font-medium">{title}</h3>
 
-      {loading && (
-        <p className="text-sm text-white/60">Cargando alimentos…</p>
-      )}
+      {items.map((item) => (
+        <div key={item.id} className="grid grid-cols-2 gap-3">
+          <select
+            className="input"
+            value={item.foodId}
+            onChange={(e) =>
+              updateItem(item.id, "foodId", e.target.value)
+            }
+          >
+            {foods.map((food) => (
+              <option key={food.id} value={food.id}>
+                {food.name}
+              </option>
+            ))}
+          </select>
 
-      {!loading &&
-        items.map((item) => (
-          <div key={item.id} className="grid grid-cols-2 gap-3">
-            <select
-              className="input"
-              value={item.foodId}
-              onChange={(e) =>
-                updateItem(item.id, "foodId", e.target.value)
-              }
-            >
-              {foods.map((food) => (
-                <option key={food.id} value={food.id}>
-                  {food.name}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="number"
-              min="0"
-              className="input"
-              placeholder="Gramos"
-              value={item.grams}
-              onChange={(e) =>
-                updateItem(item.id, "grams", Number(e.target.value))
-              }
-            />
-          </div>
-        ))}
+          <input
+            type="number"
+            min="0"
+            className="input"
+            placeholder="Gramos"
+            value={item.grams}
+            onChange={(e) =>
+              updateItem(item.id, "grams", Number(e.target.value))
+            }
+          />
+        </div>
+      ))}
 
       <button
         onClick={addItem}
-        disabled={loading || foods.length === 0}
+        disabled={foods.length === 0}
         className="text-sm text-[var(--color-accent)] disabled:opacity-40"
       >
         + Añadir alimento
