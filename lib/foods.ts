@@ -1,4 +1,13 @@
-export const FOODS = [
+export type Food = {
+  id: string;
+  name: string;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
+export const FOODS: Food[] = [
   {
     id: "pollo",
     name: "Pollo",

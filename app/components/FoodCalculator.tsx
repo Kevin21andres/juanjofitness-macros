@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { FOODS } from "/lib/foods";
+import { FOODS } from "@/lib/foods";
 
 type Item = {
+  id: string;
   foodId: string;
   grams: number;
 };
@@ -12,7 +13,28 @@ export default function FoodCalculator() {
   const [items, setItems] = useState<Item[]>([]);
 
   const addItem = () => {
-    setItems([...items, { foodId: FOODS[0].id, grams: 0 }]);
+    setItems([
+      ...items,
+      {
+        id: crypto.randomUUID(),
+        foodId: FOODS[0].id,
+        grams: 0,
+      },
+    ]);
+  };
+
+  const updateItem = (
+    id: string,
+    field: "foodId" | "grams",
+    value: string | number
+  ) => {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, [field]: value }
+          : item
+      )
+    );
   };
 
   const totals = items.reduce(
@@ -38,16 +60,14 @@ export default function FoodCalculator() {
         Calculadora de comida
       </h2>
 
-      {items.map((item, i) => (
-        <div key={i} className="grid grid-cols-2 gap-3">
+      {items.map((item) => (
+        <div key={item.id} className="grid grid-cols-2 gap-3">
           <select
             className="input"
             value={item.foodId}
-            onChange={(e) => {
-              const copy = [...items];
-              copy[i].foodId = e.target.value;
-              setItems(copy);
-            }}
+            onChange={(e) =>
+              updateItem(item.id, "foodId", e.target.value)
+            }
           >
             {FOODS.map((food) => (
               <option key={food.id} value={food.id}>
@@ -58,14 +78,17 @@ export default function FoodCalculator() {
 
           <input
             type="number"
+            min="0"
             className="input"
             placeholder="Gramos"
             value={item.grams}
-            onChange={(e) => {
-              const copy = [...items];
-              copy[i].grams = Number(e.target.value);
-              setItems(copy);
-            }}
+            onChange={(e) =>
+              updateItem(
+                item.id,
+                "grams",
+                Number(e.target.value)
+              )
+            }
           />
         </div>
       ))}
@@ -85,18 +108,21 @@ export default function FoodCalculator() {
               {totals.kcal.toFixed(0)} kcal
             </p>
           </div>
+
           <div className="card">
             <p className="text-white/60">Proteínas</p>
             <p className="text-xl font-semibold text-white">
               {totals.protein.toFixed(1)} g
             </p>
           </div>
+
           <div className="card">
             <p className="text-white/60">Carbohidratos</p>
             <p className="text-xl font-semibold text-white">
               {totals.carbs.toFixed(1)} g
             </p>
           </div>
+
           <div className="card">
             <p className="text-white/60">Grasas</p>
             <p className="text-xl font-semibold text-white">
