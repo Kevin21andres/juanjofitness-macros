@@ -1,4 +1,15 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+
 export default function LoginPage() {
+  const router = useRouter();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push("/home");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0B0B0B]">
       <div className="w-full max-w-sm bg-[#111111] p-8 rounded-2xl border border-white/10">
@@ -9,7 +20,7 @@ export default function LoginPage() {
           Herramienta interna Juanjo Fitness
         </p>
 
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm text-white/80 mb-1">
               Email
