@@ -1,89 +1,157 @@
 "use client";
 
+import { use } from "react";
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { getClient, updateClient } from "@/lib/clientsApi";
+import Link from "next/link";
+import { getClient, Client } from "@/lib/clientsApi";
+import {
+  getActiveDiet,
+  getDietHistory,
+  Diet,
+} from "@/lib/dietsApi";
 
-export default function ClientDetailPage() {
-  const { id } = useParams<{ id: string }>();
-  const router = useRouter();
+type Props = {
+  params: Promise<{ id: string }>;
+};
 
+export default function ClientPage({ params }: Props) {
+  // ✅ RESOLVER params correctamente
+  const { id: clientId } = use(params);
+
+  const [client, setClient] = useState<Client | null>(null);
+  const [activeDiet, setActiveDiet] = useState<Diet | null>(null);
+  const [history, setHistory] = useState<Diet[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 estados locales (CLAVE)
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [notes, setNotes] = useState("");
-
   useEffect(() => {
-    const loadClient = async () => {
+    const load = async () => {
       try {
-        const client = await getClient(id);
+        const c = await getClient(clientId);
+        const active = await getActiveDiet(clientId);
+        const hist = await getDietHistory(clientId);
 
-        // 👉 copiar datos a estados
-        setName(client.name ?? "");
-        setEmail(client.email ?? "");
-        setNotes(client.notes ?? "");
+        setClient(c);
+        setActiveDiet(active);
+        setHistory(hist);
       } finally {
         setLoading(false);
       }
     };
 
-    loadClient();
-  }, [id]);
-
-  const save = async () => {
-    await updateClient(id, {
-      name,
-      email,
-      notes,
-    });
-
-    router.push("/clients");
-  };
+    load();
+  }, [clientId]);
 
   if (loading) {
-    return (
-      <div className="p-6 text-white/60">
-        Cargando cliente…
-      </div>
-    );
+    return <p className="text-white p-6">Cargando cliente…</p>;
+  }
+
+  if (!client) {
+    return <p className="text-white p-6">Cliente no encontrado</p>;
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0B0B] p-6 max-w-xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#0B0B0B] p-6 space-y-8">
 
-      <h1 className="text-2xl font-semibold text-white">
-        Editar cliente
-      </h1>
+      {/* HEADER */}
+      <header className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">
+            {client.name}
+          </h1>
+          {client.email && (
+            <p className="text-white/60 text-sm">
+              {client.email}
+            </p>
+          )}
+        </div>
 
-      <input
-        className="input"
-        placeholder="Nombre"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
+        <Link
+          href="/clients"
+          className="text-sm text-[var(--color-accent)] hover:underline"
+        >
+          ← Volver a clientes
+        </Link>
+      </header>
 
-      <input
-        className="input"
-        placeholder="Email (opcional)"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+      {/* =====================
+          DIETA ACTIVA
+      ====================== */}
+      <section className="card space-y-3">
+        <h2 className="text-white font-medium text-lg">
+          Dieta actual
+        </h2>
 
-      <textarea
-        className="input min-h-[120px]"
-        placeholder="Notas"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-      />
+        {activeDiet ? (
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-white">{activeDiet.name}</p>
+              <p className="text-xs text-white/40">
+                Creada el{" "}
+                {new Date(activeDiet.created_at).toLocaleDateString()}
+              </p>
+            </div>
 
-      <button
-        onClick={save}
-        className="bg-[var(--color-accent)] px-4 py-2 rounded-lg text-white"
-      >
-        Guardar cambios
-      </button>
+            <Link
+              href={`/clients/${clientId}/diet/${activeDiet.id}`}
+              className="text-sm text-[var(--color-accent)]"
+            >
+              Ver dieta →
+            </Link>
+          </div>
+        ) : (
+          <p className="text-white/60 text-sm">
+            Este cliente no tiene una dieta activa.
+          </p>
+        )}
+
+        <Link
+          href={`/calculator?clientId=${clientId}`}
+          className="inline-block mt-2 bg-[var(--color-accent)] px-4 py-2 rounded-lg text-white text-sm"
+        >
+          {activeDiet ? "Cambiar dieta" : "Crear dieta"}
+        </Link>
+      </section>
+
+      {/* =====================
+          HISTÓRICO
+      ====================== */}
+      <section className="card space-y-4">
+        <h2 className="text-white font-medium text-lg">
+          Historial de dietas
+        </h2>
+
+        {history.length === 0 && (
+          <p className="text-white/60 text-sm">
+            No hay dietas anteriores.
+          </p>
+        )}
+
+        <ul className="space-y-2">
+          {history.map((diet) => (
+            <li
+              key={diet.id}
+              className="flex justify-between items-center border-b border-white/10 pb-2"
+            >
+              <div>
+                <p className="text-white text-sm">
+                  {diet.name}
+                </p>
+                <p className="text-xs text-white/40">
+                  {new Date(diet.created_at).toLocaleDateString()}
+                  {diet.is_active && " · activa"}
+                </p>
+              </div>
+
+              <Link
+                href={`/clients/${clientId}/diet/${diet.id}`}
+                className="text-xs text-[var(--color-accent)]"
+              >
+                Ver →
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
 
     </div>
   );
