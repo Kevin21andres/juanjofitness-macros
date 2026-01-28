@@ -205,7 +205,6 @@ export default function NewClientPage() {
               />
             </div>
           </section>
-
           {/* ERROR */}
           {error && (
             <p className="text-sm text-red-400">
