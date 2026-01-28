@@ -13,16 +13,14 @@ type Client = {
   name: string;
 };
 
-export default function CalculatorPage() {
+export default function CalculatorClient() {
   const searchParams = useSearchParams();
   const clientIdFromUrl = searchParams.get("clientId");
 
   const [clients, setClients] = useState<Client[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
-
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [query, setQuery] = useState("");
-
   const [savedDietId, setSavedDietId] = useState<string | null>(null);
   const [savedDiet, setSavedDiet] = useState<DietDetail | null>(null);
   const [loadingDiet, setLoadingDiet] = useState(false);
@@ -60,7 +58,6 @@ export default function CalculatorPage() {
     if (!savedDietId) return;
 
     setLoadingDiet(true);
-
     getDietDetail(savedDietId)
       .then(setSavedDiet)
       .finally(() => setLoadingDiet(false));
@@ -76,7 +73,6 @@ export default function CalculatorPage() {
 
   return (
     <div className="min-h-screen bg-[#0B0B0B] p-6 space-y-8">
-
       {/* HEADER */}
       <header className="flex justify-between items-center">
         <div>
@@ -98,9 +94,7 @@ export default function CalculatorPage() {
 
       {/* CLIENTE */}
       <section className="card space-y-3">
-        <label className="text-sm text-white/70">
-          Cliente
-        </label>
+        <label className="text-sm text-white/70">Cliente</label>
 
         <input
           className="input"
@@ -117,19 +111,20 @@ export default function CalculatorPage() {
             </p>
           )}
 
-          {!loadingClients && filteredClients.map((client) => (
-            <button
-              key={client.id}
-              type="button"
-              onClick={() => {
-                setSelectedClient(client);
-                setQuery(client.name);
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/5"
-            >
-              {client.name}
-            </button>
-          ))}
+          {!loadingClients &&
+            filteredClients.map((client) => (
+              <button
+                key={client.id}
+                type="button"
+                onClick={() => {
+                  setSelectedClient(client);
+                  setQuery(client.name);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/5"
+              >
+                {client.name}
+              </button>
+            ))}
 
           {!loadingClients && filteredClients.length === 0 && (
             <p className="px-4 py-2 text-sm text-white/40">
@@ -148,7 +143,7 @@ export default function CalculatorPage() {
         />
       )}
 
-      {/* MODAL POST-GUARDADO */}
+      {/* MODAL */}
       {savedDiet && selectedClient && (
         <SaveDietModal
           clientName={selectedClient.name}
@@ -160,7 +155,6 @@ export default function CalculatorPage() {
         />
       )}
 
-      {/* LOADING DIETA */}
       {loadingDiet && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center">
           <p className="text-white text-sm">
