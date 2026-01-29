@@ -14,12 +14,12 @@ export default async function SharedDietPage({
   const { diet } = sharedDiet;
 
   return (
-    <div className="min-h-screen bg-[#0B0B0B] text-white">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-10">
 
         {/* HEADER */}
         <header className="space-y-4">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--foreground)]">
             {diet.name}
           </h1>
 
@@ -34,8 +34,8 @@ export default async function SharedDietPage({
 
         {/* NOTAS */}
         {diet.notes?.trim() && (
-          <section className="rounded-2xl border border-white/10 bg-[#111] p-5 space-y-3">
-            <h2 className="text-base font-medium flex items-center gap-2">
+          <section className="rounded-2xl border border-[var(--color-accent)]/30 bg-[#0f172a]/40 p-5 space-y-3">
+            <h2 className="text-sm font-medium flex items-center gap-2 text-[var(--color-accent)]">
               📝 Notas y recomendaciones
             </h2>
 
@@ -54,7 +54,7 @@ export default async function SharedDietPage({
                 key={meal.id}
                 className="rounded-2xl border border-white/10 bg-[#111] p-5 space-y-4"
               >
-                <h2 className="text-base font-medium flex items-center gap-2">
+                <h2 className="text-sm font-medium flex items-center gap-2 text-[var(--color-accent)]">
                   🍽️ Comida {meal.meal_index + 1}
                 </h2>
 
@@ -79,7 +79,10 @@ export default async function SharedDietPage({
 
         {/* FOOTER */}
         <footer className="pt-6 text-center text-[11px] text-white/40">
-          Plan nutricional generado con JuanjoFitness
+          Plan nutricional generado con{" "}
+          <span className="text-[var(--color-accent)] font-medium">
+            JuanjoFitness
+          </span>
         </footer>
       </div>
     </div>
@@ -98,8 +101,12 @@ function Stat({
 }) {
   return (
     <div className="rounded-xl border border-white/10 bg-[#111] px-4 py-3">
-      <p className="text-xs text-white/50">{label}</p>
-      <p className="text-sm font-medium">{value}</p>
+      <p className="text-[11px] uppercase tracking-wide text-white/40">
+        {label}
+      </p>
+      <p className="text-sm font-semibold text-[var(--color-accent)]">
+        {value}
+      </p>
     </div>
   );
 }

@@ -20,55 +20,48 @@ export function generateDietPdf(
   const pageHeight = doc.internal.pageSize.getHeight();
 
   /* =========================
-     🎨 COLORES
+     🎨 COLORES CORPORATIVOS
   ========================= */
-  const MUTED: [number, number, number] = [100, 116, 139];
-  const DARK: [number, number, number] = [30, 30, 30];
-  const BLUE: [number, number, number] = [37, 99, 235];
-  const BG: [number, number, number] = [245, 247, 250];
+  const ACCENT: [number, number, number] = [30, 144, 255]; // #1e90ff
+  const DARK: [number, number, number] = [15, 15, 15];
+  const MUTED: [number, number, number] = [120, 130, 150];
+  const CARD_BG: [number, number, number] = [245, 247, 250];
 
-  /* =========================
-     🧾 PORTADA
-  ========================= */
-  doc.setFillColor(...BLUE);
-  doc.rect(0, 0, pageWidth, 70, "F");
-
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(30);
-  doc.text("PLAN NUTRICIONAL", pageWidth / 2, 35, {
-    align: "center",
-  });
-
-  doc.setFontSize(18);
-  doc.text(clientName, pageWidth / 2, 48, {
-    align: "center",
-  });
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(12);
-  doc.text(
-    `Fecha: ${new Date().toLocaleDateString()}`,
-    pageWidth / 2,
-    60,
-    { align: "center" }
-  );
-
-  /* =========================
-     👉 CONTENIDO
-  ========================= */
-  doc.addPage();
   let y = 20;
 
   /* =========================
-     🔢 TOTALES
+     🔵 HEADER (PORTADA LIGERA)
+  ========================= */
+  doc.setFillColor(...ACCENT);
+  doc.rect(0, 0, pageWidth, 45, "F");
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.text("PLAN NUTRICIONAL", 20, 22);
+
+  doc.setFontSize(14);
+  doc.text(clientName, 20, 32);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(
+    `Fecha: ${new Date().toLocaleDateString()}`,
+    pageWidth - 20,
+    32,
+    { align: "right" }
+  );
+
+  y = 60;
+
+  /* =========================
+     🔢 CÁLCULO TOTALES
   ========================= */
   const totals: Totals = diet.meals.reduce(
     (acc, meal) => {
       meal.items.forEach((item) => {
         const factor = item.grams / 100;
         const f = item.food;
-
         acc.kcal += f.kcal_100 * factor;
         acc.protein += f.protein_100 * factor;
         acc.carbs += f.carbs_100 * factor;
@@ -82,18 +75,18 @@ export function generateDietPdf(
   /* =========================
      📊 RESUMEN DIARIO
   ========================= */
-  doc.setFillColor(...BG);
-  doc.roundedRect(14, y, pageWidth - 28, 34, 8, 8, "F");
+  doc.setFillColor(...CARD_BG);
+  doc.roundedRect(14, y, pageWidth - 28, 32, 8, 8, "F");
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setTextColor(...DARK);
-  doc.text("Resumen diario", 20, y + 12);
+  doc.text("Resumen diario", 20, y + 10);
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
 
-  const cols = [22, 65, 108, 150];
+  const cols = [22, 70, 118, 160];
   const labels = ["Kcal", "Proteína", "Carbohidratos", "Grasas"];
   const values = [
     totals.kcal.toFixed(0),
@@ -104,23 +97,22 @@ export function generateDietPdf(
 
   labels.forEach((label, i) => {
     doc.setTextColor(...MUTED);
-    doc.text(label, cols[i], y + 22);
-
-    doc.setTextColor(...DARK);
+    doc.text(label, cols[i], y + 20);
+    doc.setTextColor(...ACCENT);
     doc.setFont("helvetica", "bold");
-    doc.text(values[i], cols[i], y + 30);
+    doc.text(values[i], cols[i], y + 28);
   });
 
-  y += 50;
+  y += 45;
 
   /* =========================
      🍽️ COMIDAS
   ========================= */
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
+  doc.setFontSize(16);
   doc.setTextColor(...DARK);
   doc.text("Distribución de comidas", 14, y);
-  y += 8;
+  y += 6;
 
   diet.meals
     .sort((a, b) => a.meal_index - b.meal_index)
@@ -139,36 +131,40 @@ export function generateDietPdf(
           item.grams.toString(),
         ]),
         headStyles: {
-          fillColor: BG,
-          textColor: DARK,
+          fillColor: CARD_BG,
+          textColor: ACCENT,
           fontStyle: "bold",
         },
         margin: { left: 14, right: 14 },
       });
 
-      const lastTable = (doc as any).lastAutoTable;
-      y = lastTable ? lastTable.finalY + 10 : y + 10;
+      const last = (doc as any).lastAutoTable;
+      y = last ? last.finalY + 8 : y + 8;
+
+      if (y > pageHeight - 40) {
+        doc.addPage();
+        y = 20;
+      }
     });
 
   /* =========================
-     📝 NOTAS DE LA DIETA
+     📝 NOTAS
   ========================= */
-  if (diet.notes && diet.notes.trim().length > 0) {
-    // Salto de página si no cabe
+  if (diet.notes?.trim()) {
     if (y + 40 > pageHeight - 20) {
       doc.addPage();
       y = 20;
     }
 
-    doc.setFillColor(...BG);
-    doc.roundedRect(14, y, pageWidth - 28, 8, 4, 4, "F");
+    doc.setFillColor(...CARD_BG);
+    doc.roundedRect(14, y, pageWidth - 28, 10, 6, 6, "F");
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(...DARK);
-    doc.text("Notas y recomendaciones", 18, y + 6);
+    doc.setFontSize(14);
+    doc.setTextColor(...ACCENT);
+    doc.text("Notas y recomendaciones", 18, y + 7);
 
-    y += 14;
+    y += 16;
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
@@ -178,7 +174,6 @@ export function generateDietPdf(
       diet.notes,
       pageWidth - 36
     );
-
     doc.text(text, 18, y);
   }
 
@@ -191,7 +186,7 @@ export function generateDietPdf(
     doc.setFontSize(9);
     doc.setTextColor(...MUTED);
     doc.text(
-      "Plan nutricional generado automáticamente",
+      "Plan nutricional generado con JuanjoFitness",
       pageWidth / 2,
       pageHeight - 10,
       { align: "center" }
@@ -199,7 +194,7 @@ export function generateDietPdf(
   }
 
   /* =========================
-     📥 DESCARGA
+     DESCARGA
   ========================= */
   const today = new Date().toISOString().slice(0, 10);
   doc.save(
