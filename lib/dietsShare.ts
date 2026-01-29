@@ -126,22 +126,18 @@ export async function shareDietByWhatsApp({
   const url = getDietShareUrl(shareToken);
 
   const message = `
-Hola ${clientName} 👋
-
-Te dejo tu plan nutricional actualizado 🍽️💪
-
-👉 ${url}
-
+Hola ${clientName}
+Te dejo tu plan nutricional actualizado.
+ ${url}
 Cualquier duda me dices 🙂
   `.trim();
 
   const phone = clientPhone.replace(/\s+/g, "");
   const encodedMessage = encodeURIComponent(message);
+  const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
 
-  window.open(
-    `https://wa.me/${phone}?text=${encodedMessage}`,
-    "_blank"
-  );
+  // ✅ CLAVE: MISMA PESTAÑA (móvil friendly)
+  window.location.href = whatsappUrl;
 }
 
 /* =========================
