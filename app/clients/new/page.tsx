@@ -49,14 +49,10 @@ export default function NewClientPage() {
     try {
       await createClient({
         name: `${form.name} ${form.surname}`,
-        email: form.email,
-        notes: [
-          `Teléfono: ${form.phone}`,
-          form.age && `Edad: ${form.age}`,
-          form.notes,
-        ]
-          .filter(Boolean)
-          .join(" · "),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        age: form.age ? Number(form.age) : null,
+        notes: form.notes || null,
       });
 
       router.push("/clients");
@@ -70,7 +66,6 @@ export default function NewClientPage() {
 
   return (
     <div className="min-h-screen bg-[#0B0B0B] p-6 flex justify-center">
-
       <div className="w-full max-w-2xl space-y-8">
 
         {/* HEADER */}
@@ -92,14 +87,9 @@ export default function NewClientPage() {
         </header>
 
         {/* FORM */}
-        <form
-          onSubmit={submit}
-          className="card space-y-8"
-        >
+        <form onSubmit={submit} className="card space-y-8">
 
-          {/* ======================
-              DATOS OBLIGATORIOS
-          ====================== */}
+          {/* DATOS OBLIGATORIOS */}
           <section className="space-y-4">
             <h2 className="text-white font-medium text-lg">
               📌 Datos obligatorios
@@ -107,26 +97,20 @@ export default function NewClientPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-white/60">
-                  Nombre *
-                </label>
+                <label className="text-xs text-white/60">Nombre *</label>
                 <input
                   name="name"
                   className="input mt-1"
-                  placeholder="Juan"
                   value={form.name}
                   onChange={onChange}
                 />
               </div>
 
               <div>
-                <label className="text-xs text-white/60">
-                  Apellidos *
-                </label>
+                <label className="text-xs text-white/60">Apellidos *</label>
                 <input
                   name="surname"
                   className="input mt-1"
-                  placeholder="Pérez García"
                   value={form.surname}
                   onChange={onChange}
                 />
@@ -141,7 +125,6 @@ export default function NewClientPage() {
                 name="email"
                 type="email"
                 className="input mt-1"
-                placeholder="juan@email.com"
                 value={form.email}
                 onChange={onChange}
               />
@@ -167,9 +150,7 @@ export default function NewClientPage() {
             </div>
           </section>
 
-          {/* ======================
-              DATOS OPCIONALES
-          ====================== */}
+          {/* DATOS OPCIONALES */}
           <section className="space-y-4 border-t border-white/10 pt-6">
             <h2 className="text-white font-medium text-lg">
               📝 Información adicional
@@ -185,7 +166,6 @@ export default function NewClientPage() {
                   type="number"
                   min="0"
                   className="input mt-1"
-                  placeholder="32"
                   value={form.age}
                   onChange={onChange}
                 />
@@ -193,23 +173,18 @@ export default function NewClientPage() {
             </div>
 
             <div>
-              <label className="text-xs text-white/60">
-                Notas
-              </label>
+              <label className="text-xs text-white/60">Notas</label>
               <textarea
                 name="notes"
                 className="input mt-1 min-h-[90px]"
-                placeholder="Objetivos, lesiones, observaciones…"
                 value={form.notes}
                 onChange={onChange}
               />
             </div>
           </section>
-          {/* ERROR */}
+
           {error && (
-            <p className="text-sm text-red-400">
-              {error}
-            </p>
+            <p className="text-sm text-red-400">{error}</p>
           )}
 
           {/* ACTIONS */}

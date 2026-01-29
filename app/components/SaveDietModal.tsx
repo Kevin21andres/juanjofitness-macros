@@ -3,26 +3,37 @@
 import { useState } from "react";
 import { DietDetail } from "@/lib/dietsApi";
 import { generateDietPdf } from "@/lib/pdf/generateDietPdf";
+import {
+  shareDietByWhatsApp,
+  shareDietByEmail,
+  getDietShareUrl,
+} from "@/lib/dietsShare";
 
 type Props = {
   clientName: string;
-  diet: DietDetail; // dieta completa
+  diet: DietDetail;
+  clientEmail?: string | null;
+  clientPhone?: string | null;
   onClose: () => void;
 };
 
 export default function SaveDietModal({
   clientName,
   diet,
+  clientEmail,
+  clientPhone,
   onClose,
 }: Props) {
   const [generating, setGenerating] = useState(false);
 
+  /* =========================
+     DESCARGA PDF LOCAL
+  ========================= */
   const handlePdf = async () => {
     if (generating) return;
 
     try {
       setGenerating(true);
-      // ⏳ pequeña pausa para que se vea el estado visual
       await new Promise((r) => setTimeout(r, 300));
       generateDietPdf(diet, clientName);
     } finally {
@@ -30,12 +41,44 @@ export default function SaveDietModal({
     }
   };
 
+  /* =========================
+     WHATSAPP
+  ========================= */
+  const handleWhatsapp = () => {
+    try {
+      shareDietByWhatsApp({
+        clientName,
+        dietId: diet.id,
+        clientPhone,
+      });
+    } catch (e) {
+      alert("El cliente no tiene teléfono");
+    }
+  };
+
+  /* =========================
+     EMAIL
+  ========================= */
+  const handleEmail = () => {
+    try {
+      shareDietByEmail({
+        clientName,
+        dietId: diet.id,
+        clientEmail,
+      });
+    } catch (e) {
+      alert("El cliente no tiene email");
+    }
+  };
+
+  /* =========================
+     UI
+  ========================= */
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label="Dieta guardada"
     >
       <div className="bg-[#111] rounded-2xl p-6 w-full max-w-md space-y-5 shadow-xl border border-white/10">
 
@@ -45,57 +88,58 @@ export default function SaveDietModal({
         </h2>
 
         <p className="text-sm text-white/70">
-          La dieta se ha guardado para
-          <br />
-          <span className="text-white font-medium">
-            {clientName}
-          </span>
+          La dieta se ha guardado para<br />
+          <span className="text-white font-medium">{clientName}</span>
         </p>
 
         {/* ACTIONS */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+
           {/* PDF */}
           <button
             onClick={handlePdf}
             disabled={generating}
-            aria-label="Descargar PDF"
             className={`
               border border-white/20 rounded-lg py-2 text-sm text-white
-              transition focus:outline-none focus:ring-2 focus:ring-white/30
-              ${
-                generating
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-white/5"
-              }
+              transition
+              ${generating ? "opacity-50 cursor-not-allowed" : "hover:bg-white/5"}
             `}
           >
             {generating ? "⏳ Generando…" : "📄 Descargar PDF"}
           </button>
 
-          {/* EMAIL (futuro) */}
+          {/* EMAIL */}
           <button
-            disabled
-            title="Próximamente"
-            className="border border-white/10 rounded-lg py-2 text-sm text-white/40 cursor-not-allowed"
+            onClick={handleEmail}
+            disabled={!clientEmail}
+            className={`
+              border border-white/20 rounded-lg py-2 text-sm text-white
+              transition
+              ${!clientEmail ? "opacity-40 cursor-not-allowed" : "hover:bg-white/5"}
+            `}
           >
             📧 Email
           </button>
 
-          {/* WHATSAPP (futuro) */}
+          {/* WHATSAPP */}
           <button
-            disabled
-            title="Próximamente"
-            className="border border-white/10 rounded-lg py-2 text-sm text-white/40 cursor-not-allowed"
+            onClick={handleWhatsapp}
+            disabled={!clientPhone}
+            className={`
+              border border-white/20 rounded-lg py-2 text-sm text-white
+              transition
+              ${!clientPhone ? "opacity-40 cursor-not-allowed" : "hover:bg-white/5"}
+            `}
           >
             📲 WhatsApp
           </button>
+
         </div>
 
         {/* FOOTER */}
-        <div className="flex justify-end items-center pt-3 border-t border-white/10">
+        <div className="flex justify-end pt-3 border-t border-white/10">
           <button
             onClick={onClose}
-            aria-label="Cerrar modal"
             className="text-sm text-white/60 hover:text-white transition"
           >
             Cerrar

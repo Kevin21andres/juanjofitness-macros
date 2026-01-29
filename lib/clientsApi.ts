@@ -7,8 +7,8 @@ import { supabase } from "./supabaseClient";
 export type Client = {
   id: string;
   name: string;
-  email?: string | null;
-  notes?: string | null;
+  email: string | null;
+  notes: string | null;
   created_at: string;
 };
 
@@ -63,7 +63,6 @@ export async function getClientsWithCurrentDiet(): Promise<ClientWithDiet[]> {
         created_at,
         is_active,
         diet_meals (
-          id,
           diet_items (
             grams,
             foods (
@@ -81,21 +80,23 @@ export async function getClientsWithCurrentDiet(): Promise<ClientWithDiet[]> {
 
   return (data ?? []).map((client: any) => {
     const activeDiet = client.diets?.find(
-      (d: any) => d.is_active
+      (d: any) => d.is_active === true
     );
 
     if (!activeDiet) {
       return {
         id: client.id,
         name: client.name,
-        email: client.email,
-        notes: client.notes,
+        email: client.email ?? null,
+        notes: client.notes ?? null,
         created_at: client.created_at,
         currentDiet: null,
       };
     }
 
-    // 🔢 CALCULAR TOTALES
+    /* =========================
+       🔢 CALCULAR TOTALES
+    ========================= */
     const totals = activeDiet.diet_meals.reduce(
       (acc: DietTotals, meal: any) => {
         meal.diet_items.forEach((item: any) => {
@@ -115,8 +116,8 @@ export async function getClientsWithCurrentDiet(): Promise<ClientWithDiet[]> {
     return {
       id: client.id,
       name: client.name,
-      email: client.email,
-      notes: client.notes,
+      email: client.email ?? null,
+      notes: client.notes ?? null,
       created_at: client.created_at,
       currentDiet: {
         id: activeDiet.id,
@@ -154,10 +155,17 @@ export async function getClient(id: string): Promise<Client> {
 
 export async function createClient(payload: {
   name: string;
-  email?: string;
-  notes?: string;
+  email: string | null;
+  notes: string | null;
 }) {
-  const { error } = await supabase.from("clients").insert(payload);
+  const { error } = await supabase
+    .from("clients")
+    .insert({
+      name: payload.name,
+      email: payload.email ?? null,
+      notes: payload.notes ?? null,
+    });
+
   if (error) throw error;
 }
 
@@ -165,13 +173,17 @@ export async function updateClient(
   id: string,
   payload: {
     name: string;
-    email?: string;
-    notes?: string;
+    email: string | null;
+    notes: string | null;
   }
 ) {
   const { error } = await supabase
     .from("clients")
-    .update(payload)
+    .update({
+      name: payload.name,
+      email: payload.email ?? null,
+      notes: payload.notes ?? null,
+    })
     .eq("id", id);
 
   if (error) throw error;
