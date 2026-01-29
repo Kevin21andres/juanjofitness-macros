@@ -60,9 +60,20 @@ export default function DietDetailPage({
         </p>
       </header>
 
-      {/* =========================
-          🍽️ COMIDAS
-      ========================= */}
+      {/* 📝 NOTAS DE LA DIETA */}
+      {diet.notes && diet.notes.trim().length > 0 && (
+        <section className="card space-y-2">
+          <h3 className="text-white font-medium text-lg">
+            📝 Notas y recomendaciones
+          </h3>
+
+          <p className="text-sm text-white/80 whitespace-pre-line">
+            {diet.notes}
+          </p>
+        </section>
+      )}
+
+      {/* 🍽️ COMIDAS */}
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {diet.meals
           .sort((a, b) => a.meal_index - b.meal_index)
@@ -107,9 +118,7 @@ export default function DietDetailPage({
           })}
       </section>
 
-      {/* =========================
-          📊 RESUMEN VISUAL
-      ========================= */}
+      {/* 📊 RESUMEN VISUAL */}
       <section className="card space-y-4">
         <h3 className="text-white font-medium text-lg">
           Distribución de macronutrientes
@@ -125,9 +134,7 @@ export default function DietDetailPage({
         </div>
       </section>
 
-      {/* =========================
-          TOTAL DIARIO
-      ========================= */}
+      {/* TOTAL DIARIO */}
       <section className="card">
         <h3 className="text-white font-medium mb-3">
           Total diario

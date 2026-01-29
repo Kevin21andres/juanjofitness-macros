@@ -11,6 +11,7 @@ export type Diet = {
   meals_count: number;
   is_active: boolean;
   created_at: string;
+  notes: string | null; // 🔥 NUEVO
 };
 
 export type Food = {
@@ -55,6 +56,7 @@ export type SharedDiet = {
   name: string;
   meals: DietMeal[];
   totals: DietTotals;
+  notes: string | null; // 🔥 NUEVO
 };
 
 /* =========================
@@ -89,6 +91,7 @@ export async function createDietVersion(params: {
   clientId: string;
   name: string;
   mealsCount: number;
+  notes?: string | null; // 🔥 NUEVO
 }) {
   await supabase
     .from("diets")
@@ -103,6 +106,7 @@ export async function createDietVersion(params: {
       name: params.name,
       meals_count: params.mealsCount,
       is_active: true,
+      notes: params.notes ?? null, // 🔥 NUEVO
     })
     .select()
     .single();
@@ -163,6 +167,7 @@ export async function getDietDetail(
       meals_count,
       is_active,
       created_at,
+      notes,
       diet_meals (
         id,
         meal_index,
@@ -204,6 +209,7 @@ export async function getDietDetail(
     meals_count: data.meals_count,
     is_active: data.is_active,
     created_at: data.created_at,
+    notes: data.notes ?? null, // 🔥 NUEVO
     meals,
     totals: {
       kcal: Math.round(totals.kcal),
@@ -230,6 +236,7 @@ export async function getSharedDietByToken(
       diet:diets!diet_shares_diet_id_fkey (
         id,
         name,
+        notes,
         diet_meals (
           id,
           meal_index,
@@ -258,8 +265,7 @@ export async function getSharedDietByToken(
     return null;
   }
 
-  // ✅ AHORA SÍ: OBJETO, NO ARRAY
-const diet = Array.isArray(data.diet) ? data.diet[0] : data.diet;
+  const diet = Array.isArray(data.diet) ? data.diet[0] : data.diet;
   if (!diet) return null;
 
   const meals: DietMeal[] = diet.diet_meals.map((meal: any) => ({
@@ -278,6 +284,7 @@ const diet = Array.isArray(data.diet) ? data.diet[0] : data.diet;
     diet: {
       id: diet.id,
       name: diet.name,
+      notes: diet.notes ?? null, // 🔥 NUEVO
       meals,
       totals: {
         kcal: Math.round(totals.kcal),

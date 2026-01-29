@@ -204,3 +204,22 @@ export async function updateClient(
 
   if (error) throw error;
 }
+
+/* =========================
+   ELIMINAR CLIENTE
+========================= */
+
+export async function deleteClient(id: string) {
+  const { data, error, count } = await supabase
+    .from("clients")
+    .delete({ count: "exact" })
+    .eq("id", id);
+
+  console.log("DELETE CLIENT RESULT:", { data, count, error });
+
+  if (error) throw error;
+
+  if (count === 0) {
+    throw new Error("No se ha eliminado ningún cliente (RLS o FK)");
+  }
+}

@@ -15,7 +15,6 @@ type Props = {
 };
 
 export default function ClientPage({ params }: Props) {
-  // ✅ Resolver params correctamente
   const { id: clientId } = use(params);
 
   const [client, setClient] = useState<Client | null>(null);
@@ -42,11 +41,7 @@ export default function ClientPage({ params }: Props) {
 
         setClient(c);
         setActiveDiet(active);
-
-        // 👉 Excluir la dieta activa del histórico
-        setHistory(
-          hist.filter((d) => d.id !== active?.id)
-        );
+        setHistory(hist.filter((d) => d.id !== active?.id));
       } catch (e) {
         console.error(e);
         if (mounted) {
@@ -71,11 +66,7 @@ export default function ClientPage({ params }: Props) {
   }
 
   if (error) {
-    return (
-      <p className="text-red-400 p-6">
-        {error}
-      </p>
-    );
+    return <p className="text-red-400 p-6">{error}</p>;
   }
 
   if (!client) {
@@ -86,7 +77,7 @@ export default function ClientPage({ params }: Props) {
     <div className="min-h-screen bg-[#0B0B0B] p-6 space-y-8">
 
       {/* HEADER */}
-      <header className="flex justify-between items-center">
+      <header className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-semibold text-white">
             {client.name}
@@ -105,17 +96,37 @@ export default function ClientPage({ params }: Props) {
           )}
         </div>
 
-        <Link
-          href="/clients"
-          className="text-sm text-[var(--color-accent)] hover:underline"
-        >
-          ← Volver a clientes
-        </Link>
+        <div className="flex flex-col items-end gap-2">
+          <Link
+            href={`/clients/${clientId}/edit`}
+            className="text-sm text-white bg-white/10 px-3 py-1.5 rounded-lg hover:bg-white/20 transition"
+          >
+            Editar cliente
+          </Link>
+
+          <Link
+            href="/clients"
+            className="text-xs text-[var(--color-accent)] hover:underline"
+          >
+            ← Volver a clientes
+          </Link>
+        </div>
       </header>
 
-      {/* =====================
-          DIETA ACTIVA
-      ====================== */}
+      {/* 📝 NOTAS CLIENTE */}
+      {client.notes && client.notes.trim().length > 0 && (
+        <section className="card space-y-2">
+          <h2 className="text-white font-medium text-lg">
+            📝 Notas del cliente
+          </h2>
+
+          <p className="text-sm text-white/80 whitespace-pre-line">
+            {client.notes}
+          </p>
+        </section>
+      )}
+
+      {/* DIETA ACTIVA */}
       <section className="card space-y-3">
         <h2 className="text-white font-medium text-lg">
           Dieta actual
@@ -154,9 +165,7 @@ export default function ClientPage({ params }: Props) {
         </Link>
       </section>
 
-      {/* =====================
-          HISTÓRICO
-      ====================== */}
+      {/* HISTÓRICO */}
       <section className="card space-y-4">
         <h2 className="text-white font-medium text-lg">
           Historial de dietas

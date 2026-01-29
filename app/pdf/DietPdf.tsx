@@ -111,6 +111,14 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
   },
 
+  /* ---------- NOTAS ---------- */
+  notesText: {
+    fontSize: 11,
+    color: COLORS.text,
+    lineHeight: 1.4,
+    whiteSpace: "pre-wrap",
+  },
+
   footer: {
     marginTop: 30,
     fontSize: 9,
@@ -208,6 +216,21 @@ export default function DietPdf({
             </Text>
           </View>
         </View>
+
+        {/* 📝 NOTAS */}
+        {diet.notes && diet.notes.trim().length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>
+              Notas y recomendaciones
+            </Text>
+
+            <View style={styles.card}>
+              <Text style={styles.notesText}>
+                {diet.notes}
+              </Text>
+            </View>
+          </>
+        )}
 
         <Text style={styles.footer}>
           Plan generado automáticamente · Nutrición personalizada

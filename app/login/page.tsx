@@ -1,12 +1,36 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabaseBrowser } from "@/lib/supabaseBrowser";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const { error, data } =
+      await supabaseBrowser.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+    console.log("LOGIN RESULT:", { error, data });
+
+    setLoading(false);
+
+    if (error) {
+      setError("Credenciales incorrectas");
+      return;
+    }
+
     router.push("/home");
   };
 
@@ -21,33 +45,33 @@ export default function LoginPage() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm text-white/80 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              placeholder="juanjo@email.com"
-              className="w-full bg-[#0B0B0B] border border-white/10 rounded-lg px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:border-[var(--color-accent)]"
-            />
-          </div>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="juanjo@email.com"
+            required
+            className="w-full bg-[#0B0B0B] border border-white/10 rounded-lg px-3 py-2 text-white"
+          />
 
-          <div>
-            <label className="block text-sm text-white/80 mb-1">
-              Contraseña
-            </label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              className="w-full bg-[#0B0B0B] border border-white/10 rounded-lg px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:border-[var(--color-accent)]"
-            />
-          </div>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+            className="w-full bg-[#0B0B0B] border border-white/10 rounded-lg px-3 py-2 text-white"
+          />
+
+          {error && (
+            <p className="text-red-400 text-sm">{error}</p>
+          )}
 
           <button
-            type="submit"
-            className="w-full bg-[var(--color-accent)] text-white py-2 rounded-lg font-medium hover:brightness-110 transition"
+            disabled={loading}
+            className="w-full bg-[var(--color-accent)] py-2 rounded-lg"
           >
-            Entrar
+            {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
       </div>

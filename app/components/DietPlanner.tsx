@@ -37,6 +37,9 @@ export default function DietPlanner({
   const [loadingFoods, setLoadingFoods] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // 📝 NUEVO
+  const [notes, setNotes] = useState("");
+
   /* =============================
      CARGAR ALIMENTOS
   ============================== */
@@ -110,7 +113,6 @@ export default function DietPlanner({
   const saveDiet = async () => {
     if (!clientId || saving) return;
 
-    // 🛑 No guardar dietas vacías
     const hasAnyFood = Object.values(mealsItems).some(
       (items) => items.some((i) => i.grams > 0)
     );
@@ -126,6 +128,7 @@ export default function DietPlanner({
         clientId,
         name: generateDietName(clientName),
         mealsCount,
+        notes: notes.trim() || null, // 📝 NUEVO
       });
 
       for (let i = 0; i < mealsCount; i++) {
@@ -174,6 +177,21 @@ export default function DietPlanner({
             </option>
           ))}
         </select>
+      </section>
+
+      {/* 📝 NOTAS */}
+      <section className="card">
+        <label className="text-sm text-white/70">
+          Notas y recomendaciones
+        </label>
+
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={4}
+          placeholder="Ejemplo: beber 2–3L de agua, creatina diaria, ajustar sal según entreno…"
+          className="input mt-2 resize-none"
+        />
       </section>
 
       {/* Comidas */}

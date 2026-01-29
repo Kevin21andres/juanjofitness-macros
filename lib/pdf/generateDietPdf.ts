@@ -151,6 +151,38 @@ export function generateDietPdf(
     });
 
   /* =========================
+     📝 NOTAS DE LA DIETA
+  ========================= */
+  if (diet.notes && diet.notes.trim().length > 0) {
+    // Salto de página si no cabe
+    if (y + 40 > pageHeight - 20) {
+      doc.addPage();
+      y = 20;
+    }
+
+    doc.setFillColor(...BG);
+    doc.roundedRect(14, y, pageWidth - 28, 8, 4, 4, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(...DARK);
+    doc.text("Notas y recomendaciones", 18, y + 6);
+
+    y += 14;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(...DARK);
+
+    const text = doc.splitTextToSize(
+      diet.notes,
+      pageWidth - 36
+    );
+
+    doc.text(text, 18, y);
+  }
+
+  /* =========================
      FOOTER
   ========================= */
   const pageCount = doc.getNumberOfPages();
