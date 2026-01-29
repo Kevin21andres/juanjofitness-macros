@@ -227,7 +227,7 @@ export async function getSharedDietByToken(
       diet_id,
       is_active,
       expires_at,
-      diet:diets!diet_shares_diet_id_fkey (
+      diets (
         id,
         name,
         diet_meals (
@@ -258,8 +258,8 @@ export async function getSharedDietByToken(
     return null;
   }
 
-  // ✅ AHORA SÍ: OBJETO, NO ARRAY
-const diet = Array.isArray(data.diet) ? data.diet[0] : data.diet;
+  // 🔑 SIEMPRE array (por diseño de Supabase)
+  const diet = data.diets?.[0];
   if (!diet) return null;
 
   const meals: DietMeal[] = diet.diet_meals.map((meal: any) => ({
@@ -288,3 +288,6 @@ const diet = Array.isArray(data.diet) ? data.diet[0] : data.diet;
     },
   };
 }
+/* =========================
+   LISTA DE CLIENTES CON DIETA ACTIVA
+========================= */
