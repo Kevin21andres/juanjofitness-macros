@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DietDetail } from "@/lib/dietsApi";
+import { useRouter } from "next/navigation";
 import { generateDietPdf } from "@/lib/pdf/generateDietPdf";
 import {
   createDietShare,
@@ -24,6 +25,7 @@ export default function SaveDietModal({
   clientPhone,
   onClose,
 }: Props) {
+  const router = useRouter();
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [sharingWhatsapp, setSharingWhatsapp] = useState(false);
   const [sharingEmail, setSharingEmail] = useState(false);
@@ -189,7 +191,10 @@ export default function SaveDietModal({
         {/* FOOTER */}
         <div className="flex justify-end pt-3 border-t border-white/10">
           <button
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+            router.push('/clients');}}
+            
             className="text-sm text-white/60 hover:text-white transition"
           >
             Cerrar
