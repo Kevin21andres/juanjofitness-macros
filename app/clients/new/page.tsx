@@ -15,7 +15,6 @@ export default function NewClientPage() {
     surname: "",
     email: "",
     phone: "",
-    age: "",
     notes: "",
   });
 
@@ -25,21 +24,28 @@ export default function NewClientPage() {
   const onChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
+
+  const isFormValid =
+    form.name.trim() &&
+    form.surname.trim() &&
+    form.email.trim() &&
+    form.phone.trim() &&
+    PHONE_REGEX.test(form.phone.trim());
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
     setError(null);
 
-    if (!form.name || !form.surname || !form.email || !form.phone) {
-      setError("Nombre, apellidos, email y teléfono son obligatorios");
-      return;
-    }
-
-    if (!PHONE_REGEX.test(form.phone.trim())) {
+    if (!isFormValid) {
       setError(
-        "El teléfono debe incluir el prefijo de país (ej: +34 650 149 708)"
+        "Nombre, apellidos, email y teléfono válidos son obligatorios"
       );
       return;
     }
@@ -48,16 +54,15 @@ export default function NewClientPage() {
 
     try {
       await createClient({
-        name: `${form.name} ${form.surname}`,
-        email: form.email.trim(),
+        name: `${form.name.trim()} ${form.surname.trim()}`,
+        email: form.email.trim().toLowerCase(),
         phone: form.phone.trim(),
-        age: form.age ? Number(form.age) : null,
-        notes: form.notes || null,
+        notes: form.notes.trim() || null,
       });
 
       router.push("/clients");
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error(err);
       setError("Error creando el cliente");
     } finally {
       setLoading(false);
@@ -156,22 +161,6 @@ export default function NewClientPage() {
               📝 Información adicional
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs text-white/60">
-                  Edad (opcional)
-                </label>
-                <input
-                  name="age"
-                  type="number"
-                  min="0"
-                  className="input mt-1"
-                  value={form.age}
-                  onChange={onChange}
-                />
-              </div>
-            </div>
-
             <div>
               <label className="text-xs text-white/60">Notas</label>
               <textarea
@@ -197,7 +186,8 @@ export default function NewClientPage() {
             </Link>
 
             <button
-              disabled={loading}
+              type="submit"
+              disabled={loading || !isFormValid}
               className="bg-[var(--color-accent)] px-6 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50 transition"
             >
               {loading ? "Creando cliente…" : "Crear cliente"}

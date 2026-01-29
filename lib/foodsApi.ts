@@ -9,16 +9,16 @@ export type Food = {
   fat_100: number;
 };
 
-export async function getFoods() {
+export async function getFoods(): Promise<Food[]> {
   const { data, error } = await supabase
     .from("foods")
     .select("*")
     .order("name", { ascending: true });
 
   if (error) {
-    console.error("Error fetching foods:", error);
+    console.error("Error fetching foods", error);
     throw error;
   }
 
-  return data as Food[];
+  return data ?? [];
 }

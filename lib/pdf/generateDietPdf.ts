@@ -4,6 +4,13 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { DietDetail } from "@/lib/dietsApi";
 
+type Totals = {
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
 export function generateDietPdf(
   diet: DietDetail,
   clientName: string
@@ -15,31 +22,29 @@ export function generateDietPdf(
   /* =========================
      🎨 COLORES
   ========================= */
-const MUTED: [number, number, number] = [100, 116, 139];
-const DARK: [number, number, number] = [30, 30, 30];
-const BLUE: [number, number, number] = [37, 99, 235];
-const BG: [number, number, number] = [245, 247, 250];
-
+  const MUTED: [number, number, number] = [100, 116, 139];
+  const DARK: [number, number, number] = [30, 30, 30];
+  const BLUE: [number, number, number] = [37, 99, 235];
+  const BG: [number, number, number] = [245, 247, 250];
 
   /* =========================
-     🧾 PORTADA LIMPIA
+     🧾 PORTADA
   ========================= */
-
-  // Fondo azul superior
-  doc.setFillColor(BLUE[0], BLUE[1], BLUE[2]);
+  doc.setFillColor(...BLUE);
   doc.rect(0, 0, pageWidth, 70, "F");
 
-  // Título
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(30);
-  doc.text("PLAN NUTRICIONAL", pageWidth / 2, 35, { align: "center" });
+  doc.text("PLAN NUTRICIONAL", pageWidth / 2, 35, {
+    align: "center",
+  });
 
-  // Nombre cliente
   doc.setFontSize(18);
-  doc.text(clientName, pageWidth / 2, 48, { align: "center" });
+  doc.text(clientName, pageWidth / 2, 48, {
+    align: "center",
+  });
 
-  // Fecha actual
   doc.setFont("helvetica", "normal");
   doc.setFontSize(12);
   doc.text(
@@ -58,11 +63,12 @@ const BG: [number, number, number] = [245, 247, 250];
   /* =========================
      🔢 TOTALES
   ========================= */
-  const totals = diet.meals.reduce(
+  const totals: Totals = diet.meals.reduce(
     (acc, meal) => {
       meal.items.forEach((item) => {
-        const f = item.food;
         const factor = item.grams / 100;
+        const f = item.food;
+
         acc.kcal += f.kcal_100 * factor;
         acc.protein += f.protein_100 * factor;
         acc.carbs += f.carbs_100 * factor;
@@ -76,12 +82,12 @@ const BG: [number, number, number] = [245, 247, 250];
   /* =========================
      📊 RESUMEN DIARIO
   ========================= */
-  doc.setFillColor(BG[0], BG[1], BG[2]);
+  doc.setFillColor(...BG);
   doc.roundedRect(14, y, pageWidth - 28, 34, 8, 8, "F");
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  doc.setTextColor(...DARK);
   doc.text("Resumen diario", 20, y + 12);
 
   doc.setFontSize(11);
@@ -97,10 +103,10 @@ const BG: [number, number, number] = [245, 247, 250];
   ];
 
   labels.forEach((label, i) => {
-    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.setTextColor(...MUTED);
     doc.text(label, cols[i], y + 22);
 
-    doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+    doc.setTextColor(...DARK);
     doc.setFont("helvetica", "bold");
     doc.text(values[i], cols[i], y + 30);
   });
@@ -112,7 +118,7 @@ const BG: [number, number, number] = [245, 247, 250];
   ========================= */
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.setTextColor(DARK[0], DARK[1], DARK[2]);
+  doc.setTextColor(...DARK);
   doc.text("Distribución de comidas", 14, y);
   y += 8;
 
@@ -140,7 +146,8 @@ const BG: [number, number, number] = [245, 247, 250];
         margin: { left: 14, right: 14 },
       });
 
-      y = (doc as any).lastAutoTable.finalY + 10;
+      const lastTable = (doc as any).lastAutoTable;
+      y = lastTable ? lastTable.finalY + 10 : y + 10;
     });
 
   /* =========================
@@ -150,7 +157,7 @@ const BG: [number, number, number] = [245, 247, 250];
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFontSize(9);
-    doc.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+    doc.setTextColor(...MUTED);
     doc.text(
       "Plan nutricional generado automáticamente",
       pageWidth / 2,
@@ -163,7 +170,6 @@ const BG: [number, number, number] = [245, 247, 250];
      📥 DESCARGA
   ========================= */
   const today = new Date().toISOString().slice(0, 10);
-
   doc.save(
     `Dieta_${clientName.replace(/\s+/g, "_")}_${today}.pdf`
   );

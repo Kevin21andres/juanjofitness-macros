@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Food } from "@/lib/foodsApi";
 
 export type Item = {
@@ -22,16 +22,16 @@ export default function FoodCalculator({
 }: Props) {
   const [items, setItems] = useState<Item[]>([]);
 
-  // 🔹 Notificar cambios al padre
-  useEffect(() => {
-    onChange(items);
-  }, [items]);
+  const notify = (nextItems: Item[]) => {
+    setItems(nextItems);
+    onChange(nextItems);
+  };
 
   const addItem = () => {
     if (foods.length === 0) return;
 
-    setItems((prev) => [
-      ...prev,
+    notify([
+      ...items,
       {
         id: crypto.randomUUID(),
         foodId: foods[0].id,
@@ -41,7 +41,7 @@ export default function FoodCalculator({
   };
 
   const removeItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    notify(items.filter((item) => item.id !== id));
   };
 
   const updateItem = (
@@ -49,21 +49,19 @@ export default function FoodCalculator({
     field: "foodId" | "grams",
     value: string | number
   ) => {
-    setItems((prev) =>
-      prev.map((item) =>
+    notify(
+      items.map((item) =>
         item.id === id ? { ...item, [field]: value } : item
       )
     );
   };
 
-  // 🔹 Totales de esta comida
   const totals = items.reduce(
     (acc, item) => {
       const food = foods.find((f) => f.id === item.foodId);
-      if (!food) return acc;
+      if (!food || item.grams <= 0) return acc;
 
       const factor = item.grams / 100;
-
       acc.kcal += food.kcal_100 * factor;
       acc.protein += food.protein_100 * factor;
       acc.carbs += food.carbs_100 * factor;
@@ -76,7 +74,6 @@ export default function FoodCalculator({
 
   return (
     <section className="card space-y-5 h-full">
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-white font-medium">{title}</h3>
@@ -113,11 +110,7 @@ export default function FoodCalculator({
               placeholder="g"
               value={item.grams}
               onChange={(e) =>
-                updateItem(
-                  item.id,
-                  "grams",
-                  Number(e.target.value)
-                )
+                updateItem(item.id, "grams", Number(e.target.value))
               }
             />
 
@@ -145,18 +138,10 @@ export default function FoodCalculator({
       {items.length > 0 && (
         <div className="bg-[#0B0B0B] rounded-xl p-4 border border-white/10">
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <p className="text-white">
-              🔥 {totals.kcal.toFixed(0)} kcal
-            </p>
-            <p className="text-white">
-              🥩 {totals.protein.toFixed(1)} g
-            </p>
-            <p className="text-white">
-              🍚 {totals.carbs.toFixed(1)} g
-            </p>
-            <p className="text-white">
-              🥑 {totals.fat.toFixed(1)} g
-            </p>
+            <p>🔥 {totals.kcal.toFixed(0)} kcal</p>
+            <p>🥩 {totals.protein.toFixed(1)} g</p>
+            <p>🍚 {totals.carbs.toFixed(1)} g</p>
+            <p>🥑 {totals.fat.toFixed(1)} g</p>
           </div>
         </div>
       )}

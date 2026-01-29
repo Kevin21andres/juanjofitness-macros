@@ -4,9 +4,9 @@ import { useState } from "react";
 import { DietDetail } from "@/lib/dietsApi";
 import { generateDietPdf } from "@/lib/pdf/generateDietPdf";
 import {
+  createDietShare,
   shareDietByWhatsApp,
   shareDietByEmail,
-  getDietShareUrl,
 } from "@/lib/dietsShare";
 
 type Props = {
@@ -24,50 +24,87 @@ export default function SaveDietModal({
   clientPhone,
   onClose,
 }: Props) {
-  const [generating, setGenerating] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [sharingWhatsapp, setSharingWhatsapp] = useState(false);
+  const [sharingEmail, setSharingEmail] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   /* =========================
      DESCARGA PDF LOCAL
   ========================= */
   const handlePdf = async () => {
-    if (generating) return;
+    if (generatingPdf) return;
 
     try {
-      setGenerating(true);
+      setGeneratingPdf(true);
       await new Promise((r) => setTimeout(r, 300));
       generateDietPdf(diet, clientName);
     } finally {
-      setGenerating(false);
+      setGeneratingPdf(false);
     }
   };
 
   /* =========================
-     WHATSAPP
+     WHATSAPP (TOKEN)
   ========================= */
-  const handleWhatsapp = () => {
+  const handleWhatsapp = async () => {
+    if (!clientPhone) {
+      setError("El cliente no tiene teléfono");
+      return;
+    }
+
     try {
-      shareDietByWhatsApp({
-        clientName,
+      setError(null);
+      setSharingWhatsapp(true);
+
+      const { token } = await createDietShare({
         dietId: diet.id,
+        channel: "whatsapp",
+        sentTo: clientPhone,
+      });
+
+      await shareDietByWhatsApp({
+        clientName,
         clientPhone,
+        shareToken: token,
       });
     } catch (e) {
-      alert("El cliente no tiene teléfono");
+      console.error(e);
+      setError("Error enviando la dieta por WhatsApp");
+    } finally {
+      setSharingWhatsapp(false);
     }
   };
 
   /* =========================
-     EMAIL
+     EMAIL (TOKEN)
   ========================= */
-  const handleEmail = () => {
+  const handleEmail = async () => {
+    if (!clientEmail) {
+      setError("El cliente no tiene email");
+      return;
+    }
+
     try {
-      shareDietByEmail({
-        clientName,
+      setError(null);
+      setSharingEmail(true);
+
+      const { token } = await createDietShare({
         dietId: diet.id,
+        channel: "email",
+        sentTo: clientEmail,
+      });
+
+      await shareDietByEmail({
+        clientName,
         clientEmail,
+        shareToken: token,
       });
     } catch (e) {
-      alert("El cliente no tiene email");
+      console.error(e);
+      setError("Error enviando la dieta por email");
+    } finally {
+      setSharingEmail(false);
     }
   };
 
@@ -98,43 +135,56 @@ export default function SaveDietModal({
           {/* PDF */}
           <button
             onClick={handlePdf}
-            disabled={generating}
+            disabled={generatingPdf}
             className={`
               border border-white/20 rounded-lg py-2 text-sm text-white
               transition
-              ${generating ? "opacity-50 cursor-not-allowed" : "hover:bg-white/5"}
+              ${generatingPdf ? "opacity-50 cursor-not-allowed" : "hover:bg-white/5"}
             `}
           >
-            {generating ? "⏳ Generando…" : "📄 Descargar PDF"}
+            {generatingPdf ? "⏳ Generando…" : "📄 Descargar PDF"}
           </button>
 
           {/* EMAIL */}
           <button
             onClick={handleEmail}
-            disabled={!clientEmail}
+            disabled={!clientEmail || sharingEmail}
             className={`
               border border-white/20 rounded-lg py-2 text-sm text-white
               transition
-              ${!clientEmail ? "opacity-40 cursor-not-allowed" : "hover:bg-white/5"}
+              ${
+                !clientEmail || sharingEmail
+                  ? "opacity-40 cursor-not-allowed"
+                  : "hover:bg-white/5"
+              }
             `}
           >
-            📧 Email
+            {sharingEmail ? "⏳ Enviando…" : "📧 Email"}
           </button>
 
           {/* WHATSAPP */}
           <button
             onClick={handleWhatsapp}
-            disabled={!clientPhone}
+            disabled={!clientPhone || sharingWhatsapp}
             className={`
               border border-white/20 rounded-lg py-2 text-sm text-white
               transition
-              ${!clientPhone ? "opacity-40 cursor-not-allowed" : "hover:bg-white/5"}
+              ${
+                !clientPhone || sharingWhatsapp
+                  ? "opacity-40 cursor-not-allowed"
+                  : "hover:bg-white/5"
+              }
             `}
           >
-            📲 WhatsApp
+            {sharingWhatsapp ? "⏳ Enviando…" : "📲 WhatsApp"}
           </button>
 
         </div>
+
+        {/* ERROR */}
+        {error && (
+          <p className="text-sm text-red-400 pt-1">{error}</p>
+        )}
 
         {/* FOOTER */}
         <div className="flex justify-end pt-3 border-t border-white/10">

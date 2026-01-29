@@ -15,34 +15,67 @@ type Props = {
 };
 
 export default function ClientPage({ params }: Props) {
-  // ✅ RESOLVER params correctamente
+  // ✅ Resolver params correctamente
   const { id: clientId } = use(params);
 
   const [client, setClient] = useState<Client | null>(null);
   const [activeDiet, setActiveDiet] = useState<Diet | null>(null);
   const [history, setHistory] = useState<Diet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const load = async () => {
       try {
-        const c = await getClient(clientId);
-        const active = await getActiveDiet(clientId);
-        const hist = await getDietHistory(clientId);
+        setLoading(true);
+        setError(null);
+
+        const [c, active, hist] = await Promise.all([
+          getClient(clientId),
+          getActiveDiet(clientId),
+          getDietHistory(clientId),
+        ]);
+
+        if (!mounted) return;
 
         setClient(c);
         setActiveDiet(active);
-        setHistory(hist);
+
+        // 👉 Excluir la dieta activa del histórico
+        setHistory(
+          hist.filter((d) => d.id !== active?.id)
+        );
+      } catch (e) {
+        console.error(e);
+        if (mounted) {
+          setError("Error cargando el cliente");
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     load();
+
+    return () => {
+      mounted = false;
+    };
   }, [clientId]);
 
   if (loading) {
     return <p className="text-white p-6">Cargando cliente…</p>;
+  }
+
+  if (error) {
+    return (
+      <p className="text-red-400 p-6">
+        {error}
+      </p>
+    );
   }
 
   if (!client) {
@@ -58,9 +91,16 @@ export default function ClientPage({ params }: Props) {
           <h1 className="text-2xl font-semibold text-white">
             {client.name}
           </h1>
+
           {client.email && (
             <p className="text-white/60 text-sm">
               {client.email}
+            </p>
+          )}
+
+          {client.phone && (
+            <p className="text-white/40 text-xs">
+              📲 {client.phone}
             </p>
           )}
         </div>
@@ -84,7 +124,9 @@ export default function ClientPage({ params }: Props) {
         {activeDiet ? (
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-white">{activeDiet.name}</p>
+              <p className="text-white">
+                {activeDiet.name}
+              </p>
               <p className="text-xs text-white/40">
                 Creada el{" "}
                 {new Date(activeDiet.created_at).toLocaleDateString()}
@@ -120,39 +162,37 @@ export default function ClientPage({ params }: Props) {
           Historial de dietas
         </h2>
 
-        {history.length === 0 && (
+        {history.length === 0 ? (
           <p className="text-white/60 text-sm">
             No hay dietas anteriores.
           </p>
-        )}
-
-        <ul className="space-y-2">
-          {history.map((diet) => (
-            <li
-              key={diet.id}
-              className="flex justify-between items-center border-b border-white/10 pb-2"
-            >
-              <div>
-                <p className="text-white text-sm">
-                  {diet.name}
-                </p>
-                <p className="text-xs text-white/40">
-                  {new Date(diet.created_at).toLocaleDateString()}
-                  {diet.is_active && " · activa"}
-                </p>
-              </div>
-
-              <Link
-                href={`/clients/${clientId}/diet/${diet.id}`}
-                className="text-xs text-[var(--color-accent)]"
+        ) : (
+          <ul className="space-y-2">
+            {history.map((diet) => (
+              <li
+                key={diet.id}
+                className="flex justify-between items-center border-b border-white/10 pb-2"
               >
-                Ver →
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+                <div>
+                  <p className="text-white text-sm">
+                    {diet.name}
+                  </p>
+                  <p className="text-xs text-white/40">
+                    {new Date(diet.created_at).toLocaleDateString()}
+                  </p>
+                </div>
 
+                <Link
+                  href={`/clients/${clientId}/diet/${diet.id}`}
+                  className="text-xs text-[var(--color-accent)]"
+                >
+                  Ver →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

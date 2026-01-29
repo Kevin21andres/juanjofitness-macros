@@ -39,27 +39,6 @@ export default function DietDetailPage({
     return <p className="text-white p-6">Dieta no encontrada</p>;
   }
 
-  /* =========================
-     🔢 TOTALES DIARIOS
-  ========================= */
-
-  const totalDay: Totals = diet.meals.reduce(
-    (acc, meal) => {
-      meal.items.forEach((item) => {
-        const food = item.food;
-        const factor = item.grams / 100;
-
-        acc.kcal += food.kcal_100 * factor;
-        acc.protein += food.protein_100 * factor;
-        acc.carbs += food.carbs_100 * factor;
-        acc.fat += food.fat_100 * factor;
-      });
-
-      return acc;
-    },
-    { kcal: 0, protein: 0, carbs: 0, fat: 0 }
-  );
-
   return (
     <div className="min-h-screen bg-[#0B0B0B] p-6 space-y-8">
 
@@ -82,7 +61,7 @@ export default function DietDetailPage({
       </header>
 
       {/* =========================
-          COMIDAS (GRID)
+          🍽️ COMIDAS
       ========================= */}
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {diet.meals
@@ -90,13 +69,13 @@ export default function DietDetailPage({
           .map((meal) => {
             const mealTotals: Totals = meal.items.reduce(
               (acc, item) => {
-                const food = item.food;
                 const factor = item.grams / 100;
+                const f = item.food;
 
-                acc.kcal += food.kcal_100 * factor;
-                acc.protein += food.protein_100 * factor;
-                acc.carbs += food.carbs_100 * factor;
-                acc.fat += food.fat_100 * factor;
+                acc.kcal += f.kcal_100 * factor;
+                acc.protein += f.protein_100 * factor;
+                acc.carbs += f.carbs_100 * factor;
+                acc.fat += f.fat_100 * factor;
 
                 return acc;
               },
@@ -106,7 +85,7 @@ export default function DietDetailPage({
             return (
               <section key={meal.id} className="card space-y-3">
                 <h3 className="text-white font-medium">
-                  Comida {meal.meal_index + 1}
+                  🍽️ Comida {meal.meal_index + 1}
                 </h3>
 
                 <ul className="text-sm text-white/80 space-y-1">
@@ -138,10 +117,10 @@ export default function DietDetailPage({
 
         <div className="flex justify-center">
           <MacroDonut
-            protein={totalDay.protein}
-            carbs={totalDay.carbs}
-            fat={totalDay.fat}
-            kcal={totalDay.kcal}
+            protein={diet.totals.protein}
+            carbs={diet.totals.carbs}
+            fat={diet.totals.fat}
+            kcal={diet.totals.kcal}
           />
         </div>
       </section>
@@ -155,10 +134,10 @@ export default function DietDetailPage({
         </h3>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <p>🔥 {totalDay.kcal.toFixed(0)} kcal</p>
-          <p>🥩 {totalDay.protein.toFixed(1)} g</p>
-          <p>🍚 {totalDay.carbs.toFixed(1)} g</p>
-          <p>🥑 {totalDay.fat.toFixed(1)} g</p>
+          <p>🔥 {diet.totals.kcal} kcal</p>
+          <p>🥩 {diet.totals.protein} g</p>
+          <p>🍚 {diet.totals.carbs} g</p>
+          <p>🥑 {diet.totals.fat} g</p>
         </div>
       </section>
     </div>

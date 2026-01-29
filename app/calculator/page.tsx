@@ -11,8 +11,14 @@ export default function CalculatorPage() {
 
 function CalculatorLoading() {
   return (
-    <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center">
-      <p className="text-white text-sm">⏳ Cargando calculadora…</p>
+    <div
+      className="min-h-screen bg-[#0B0B0B] flex items-center justify-center"
+      role="status"
+      aria-live="polite"
+    >
+      <p className="text-white text-sm animate-pulse">
+        ⏳ Cargando calculadora…
+      </p>
     </div>
   );
 }

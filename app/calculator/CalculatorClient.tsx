@@ -5,22 +5,24 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import DietPlanner from "@/app/components/DietPlanner";
 import SaveDietModal from "@/app/components/SaveDietModal";
-import { getClients } from "@/lib/clientsApi";
+import {
+  getClientsWithCurrentDiet,
+  ClientWithDiet,
+} from "@/lib/clientsApi";
 import { getDietDetail, DietDetail } from "@/lib/dietsApi";
-
-type Client = {
-  id: string;
-  name: string;
-};
 
 export default function CalculatorClient() {
   const searchParams = useSearchParams();
   const clientIdFromUrl = searchParams.get("clientId");
 
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<ClientWithDiet[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const [selectedClient, setSelectedClient] =
+    useState<ClientWithDiet | null>(null);
   const [query, setQuery] = useState("");
+
   const [savedDietId, setSavedDietId] = useState<string | null>(null);
   const [savedDiet, setSavedDiet] = useState<DietDetail | null>(null);
   const [loadingDiet, setLoadingDiet] = useState(false);
@@ -31,20 +33,34 @@ export default function CalculatorClient() {
   useEffect(() => {
     let mounted = true;
 
-    getClients().then((data) => {
-      if (!mounted) return;
+    const load = async () => {
+      try {
+        setLoadingClients(true);
+        setError(null);
 
-      setClients(data);
-      setLoadingClients(false);
+        const data = await getClientsWithCurrentDiet();
+        if (!mounted) return;
 
-      if (clientIdFromUrl) {
-        const c = data.find((c) => c.id === clientIdFromUrl);
-        if (c) {
-          setSelectedClient(c);
-          setQuery(c.name);
+        setClients(data);
+        setLoadingClients(false);
+
+        if (clientIdFromUrl) {
+          const c = data.find((c) => c.id === clientIdFromUrl);
+          if (c) {
+            setSelectedClient(c);
+            setQuery(c.name);
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        if (mounted) {
+          setError("Error cargando clientes");
+          setLoadingClients(false);
         }
       }
-    });
+    };
+
+    load();
 
     return () => {
       mounted = false;
@@ -57,22 +73,37 @@ export default function CalculatorClient() {
   useEffect(() => {
     if (!savedDietId) return;
 
+    let mounted = true;
     setLoadingDiet(true);
+
     getDietDetail(savedDietId)
-      .then(setSavedDiet)
-      .finally(() => setLoadingDiet(false));
+      .then((diet) => {
+        if (mounted) setSavedDiet(diet);
+      })
+      .finally(() => {
+        if (mounted) setLoadingDiet(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, [savedDietId]);
 
-  const filteredClients = useMemo(
-    () =>
-      clients.filter((c) =>
-        c.name.toLowerCase().includes(query.toLowerCase())
-      ),
-    [clients, query]
-  );
+  /* =========================
+     FILTRADO CLIENTES
+  ========================= */
+  const filteredClients = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return clients;
+
+    return clients.filter((c) =>
+      c.name.toLowerCase().includes(q)
+    );
+  }, [clients, query]);
 
   return (
     <div className="min-h-screen bg-[#0B0B0B] p-6 space-y-8">
+
       {/* HEADER */}
       <header className="flex justify-between items-center">
         <div>
@@ -94,13 +125,20 @@ export default function CalculatorClient() {
 
       {/* CLIENTE */}
       <section className="card space-y-3">
-        <label className="text-sm text-white/70">Cliente</label>
+        <label className="text-sm text-white/70">
+          Cliente
+        </label>
 
         <input
           className="input"
           placeholder="Buscar cliente…"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setSelectedClient(null);
+            setSavedDiet(null);
+            setSavedDietId(null);
+          }}
           disabled={loadingClients}
         />
 
@@ -111,7 +149,14 @@ export default function CalculatorClient() {
             </p>
           )}
 
+          {error && (
+            <p className="px-4 py-2 text-sm text-red-400">
+              {error}
+            </p>
+          )}
+
           {!loadingClients &&
+            !error &&
             filteredClients.map((client) => (
               <button
                 key={client.id}
@@ -119,6 +164,8 @@ export default function CalculatorClient() {
                 onClick={() => {
                   setSelectedClient(client);
                   setQuery(client.name);
+                  setSavedDiet(null);
+                  setSavedDietId(null);
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/5"
               >
@@ -126,11 +173,13 @@ export default function CalculatorClient() {
               </button>
             ))}
 
-          {!loadingClients && filteredClients.length === 0 && (
-            <p className="px-4 py-2 text-sm text-white/40">
-              Sin resultados
-            </p>
-          )}
+          {!loadingClients &&
+            !error &&
+            filteredClients.length === 0 && (
+              <p className="px-4 py-2 text-sm text-white/40">
+                Sin resultados
+              </p>
+            )}
         </div>
       </section>
 
@@ -148,6 +197,8 @@ export default function CalculatorClient() {
         <SaveDietModal
           clientName={selectedClient.name}
           diet={savedDiet}
+          clientEmail={selectedClient.email}
+          clientPhone={selectedClient.phone}
           onClose={() => {
             setSavedDiet(null);
             setSavedDietId(null);
@@ -155,6 +206,7 @@ export default function CalculatorClient() {
         />
       )}
 
+      {/* LOADING OVERLAY */}
       {loadingDiet && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center">
           <p className="text-white text-sm">

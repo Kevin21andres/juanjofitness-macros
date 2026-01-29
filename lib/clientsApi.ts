@@ -1,15 +1,18 @@
 import { supabase } from "./supabaseClient";
 
 /* =========================
-   TIPOS BASE
+   TIPOS BASE (ALINEADOS BD)
 ========================= */
 
 export type Client = {
   id: string;
+  user_id: string | null;
   name: string;
   email: string | null;
+  phone: string | null;
   notes: string | null;
   created_at: string;
+  updated_at: string;
 };
 
 export type DietTotals = {
@@ -29,6 +32,32 @@ export type CurrentDiet = {
 export type ClientWithDiet = Client & {
   currentDiet: CurrentDiet | null;
 };
+
+/* =========================
+   UTILIDAD: CALCULAR TOTALES
+========================= */
+
+function calculateDietTotals(dietDays: any[]): DietTotals {
+  return dietDays.reduce(
+    (acc: DietTotals, day: any) => {
+      day.meals?.forEach((meal: any) => {
+        meal.meal_foods?.forEach((item: any) => {
+          const food = item.foods;
+          if (!food) return;
+
+          const factor = item.grams / 100;
+
+          acc.kcal += food.kcal_100 * factor;
+          acc.protein += food.protein_100 * factor;
+          acc.carbs += food.carbs_100 * factor;
+          acc.fat += food.fat_100 * factor;
+        });
+      });
+      return acc;
+    },
+    { kcal: 0, protein: 0, carbs: 0, fat: 0 }
+  );
+}
 
 /* =========================
    CLIENTES
@@ -53,23 +82,28 @@ export async function getClientsWithCurrentDiet(): Promise<ClientWithDiet[]> {
     .from("clients")
     .select(`
       id,
+      user_id,
       name,
       email,
+      phone,
       notes,
       created_at,
+      updated_at,
       diets (
         id,
         name,
         created_at,
         is_active,
-        diet_meals (
-          diet_items (
-            grams,
-            foods (
-              kcal_100,
-              protein_100,
-              carbs_100,
-              fat_100
+        diet_days (
+          meals (
+            meal_foods (
+              grams,
+              foods (
+                kcal_100,
+                protein_100,
+                carbs_100,
+                fat_100
+              )
             )
           )
         )
@@ -85,40 +119,15 @@ export async function getClientsWithCurrentDiet(): Promise<ClientWithDiet[]> {
 
     if (!activeDiet) {
       return {
-        id: client.id,
-        name: client.name,
-        email: client.email ?? null,
-        notes: client.notes ?? null,
-        created_at: client.created_at,
+        ...client,
         currentDiet: null,
       };
     }
 
-    /* =========================
-       🔢 CALCULAR TOTALES
-    ========================= */
-    const totals = activeDiet.diet_meals.reduce(
-      (acc: DietTotals, meal: any) => {
-        meal.diet_items.forEach((item: any) => {
-          const f = item.foods;
-          const factor = item.grams / 100;
-
-          acc.kcal += f.kcal_100 * factor;
-          acc.protein += f.protein_100 * factor;
-          acc.carbs += f.carbs_100 * factor;
-          acc.fat += f.fat_100 * factor;
-        });
-        return acc;
-      },
-      { kcal: 0, protein: 0, carbs: 0, fat: 0 }
-    );
+    const totals = calculateDietTotals(activeDiet.diet_days ?? []);
 
     return {
-      id: client.id,
-      name: client.name,
-      email: client.email ?? null,
-      notes: client.notes ?? null,
-      created_at: client.created_at,
+      ...client,
       currentDiet: {
         id: activeDiet.id,
         name: activeDiet.name,
@@ -150,30 +159,35 @@ export async function getClient(id: string): Promise<Client> {
 }
 
 /* =========================
-   CREAR / ACTUALIZAR
+   CREAR CLIENTE
 ========================= */
 
 export async function createClient(payload: {
   name: string;
   email: string | null;
+  phone: string | null;
   notes: string | null;
 }) {
-  const { error } = await supabase
-    .from("clients")
-    .insert({
-      name: payload.name,
-      email: payload.email ?? null,
-      notes: payload.notes ?? null,
-    });
+  const { error } = await supabase.from("clients").insert({
+    name: payload.name,
+    email: payload.email ?? null,
+    phone: payload.phone ?? null,
+    notes: payload.notes ?? null,
+  });
 
   if (error) throw error;
 }
+
+/* =========================
+   ACTUALIZAR CLIENTE
+========================= */
 
 export async function updateClient(
   id: string,
   payload: {
     name: string;
     email: string | null;
+    phone: string | null;
     notes: string | null;
   }
 ) {
@@ -182,7 +196,9 @@ export async function updateClient(
     .update({
       name: payload.name,
       email: payload.email ?? null,
+      phone: payload.phone ?? null,
       notes: payload.notes ?? null,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", id);
 

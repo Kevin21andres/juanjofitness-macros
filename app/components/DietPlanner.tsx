@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import FoodCalculator, { Item } from "./FoodCalculator";
 import { getFoods, Food } from "@/lib/foodsApi";
 import { createDietVersion } from "@/lib/dietsApi";
@@ -31,7 +31,8 @@ export default function DietPlanner({
   onSaved,
 }: Props) {
   const [mealsCount, setMealsCount] = useState(5);
-  const [mealsItems, setMealsItems] = useState<Record<number, Item[]>>({});
+  const [mealsItems, setMealsItems] =
+    useState<Record<number, Item[]>>({});
   const [foods, setFoods] = useState<Food[]>([]);
   const [loadingFoods, setLoadingFoods] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -42,14 +43,22 @@ export default function DietPlanner({
   useEffect(() => {
     let mounted = true;
 
-    getFoods()
-      .then((data) => {
+    const load = async () => {
+      try {
+        const data = await getFoods();
         if (mounted) {
           setFoods(data);
           setLoadingFoods(false);
         }
-      })
-      .catch(console.error);
+      } catch (e) {
+        console.error(e);
+        if (mounted) {
+          setLoadingFoods(false);
+        }
+      }
+    };
+
+    load();
 
     return () => {
       mounted = false;
@@ -70,30 +79,45 @@ export default function DietPlanner({
   );
 
   /* =============================
-     TOTAL DIARIO
+     TOTAL DIARIO (MEMO)
   ============================== */
-  const totalDay: Totals = Object.values(mealsItems).reduce(
-    (acc, items) => {
-      items.forEach((item) => {
-        const food = foods.find((f) => f.id === item.foodId);
-        if (!food) return;
+  const totalDay: Totals = useMemo(() => {
+    return Object.values(mealsItems).reduce(
+      (acc, items) => {
+        items.forEach((item) => {
+          if (item.grams <= 0) return;
 
-        const factor = item.grams / 100;
-        acc.kcal += food.kcal_100 * factor;
-        acc.protein += food.protein_100 * factor;
-        acc.carbs += food.carbs_100 * factor;
-        acc.fat += food.fat_100 * factor;
-      });
-      return acc;
-    },
-    { kcal: 0, protein: 0, carbs: 0, fat: 0 }
-  );
+          const food = foods.find(
+            (f) => f.id === item.foodId
+          );
+          if (!food) return;
+
+          const factor = item.grams / 100;
+          acc.kcal += food.kcal_100 * factor;
+          acc.protein += food.protein_100 * factor;
+          acc.carbs += food.carbs_100 * factor;
+          acc.fat += food.fat_100 * factor;
+        });
+        return acc;
+      },
+      { kcal: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+  }, [mealsItems, foods]);
 
   /* =============================
      GUARDAR DIETA
   ============================== */
   const saveDiet = async () => {
     if (!clientId || saving) return;
+
+    // 🛑 No guardar dietas vacías
+    const hasAnyFood = Object.values(mealsItems).some(
+      (items) => items.some((i) => i.grams > 0)
+    );
+    if (!hasAnyFood) {
+      alert("Añade al menos un alimento antes de guardar la dieta");
+      return;
+    }
 
     try {
       setSaving(true);
@@ -109,7 +133,12 @@ export default function DietPlanner({
         const items = mealsItems[i] || [];
 
         for (const item of items) {
-          await createDietItem(meal.id, item.foodId, item.grams);
+          if (item.grams <= 0) continue;
+          await createDietItem(
+            meal.id,
+            item.foodId,
+            item.grams
+          );
         }
       }
 
@@ -124,11 +153,13 @@ export default function DietPlanner({
 
   return (
     <div className="space-y-6">
+
       {/* Nº comidas */}
       <section className="card">
         <label className="text-sm text-white/70">
           Número de comidas diarias
         </label>
+
         <select
           className="input mt-2"
           value={mealsCount}
@@ -153,7 +184,9 @@ export default function DietPlanner({
               key={i}
               title={`Comida ${i + 1}`}
               foods={foods}
-              onChange={(items) => handleMealChange(i, items)}
+              onChange={(items) =>
+                handleMealChange(i, items)
+              }
             />
           ))}
         </section>
@@ -161,7 +194,10 @@ export default function DietPlanner({
 
       {/* Total */}
       <section className="card">
-        <h3 className="text-white font-medium mb-3">Total diario</h3>
+        <h3 className="text-white font-medium mb-3">
+          Total diario
+        </h3>
+
         <div className="grid grid-cols-2 gap-3 text-sm">
           <p>🔥 {totalDay.kcal.toFixed(0)} kcal</p>
           <p>🥩 {totalDay.protein.toFixed(1)} g</p>
@@ -172,6 +208,7 @@ export default function DietPlanner({
 
       {/* Guardar */}
       <button
+        type="button"
         onClick={saveDiet}
         disabled={saving}
         className="bg-[var(--color-accent)] px-6 py-3 rounded-lg text-white font-medium disabled:opacity-50"

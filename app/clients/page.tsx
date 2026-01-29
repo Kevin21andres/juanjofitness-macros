@@ -12,6 +12,7 @@ type Filter = "all" | "withDiet" | "noDiet";
 export default function ClientsPage() {
   const [clients, setClients] = useState<ClientWithDiet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
@@ -20,21 +21,48 @@ export default function ClientsPage() {
      LOAD DATA
   ====================== */
   useEffect(() => {
-    getClientsWithCurrentDiet()
-      .then(setClients)
-      .finally(() => setLoading(false));
+    let mounted = true;
+
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await getClientsWithCurrentDiet();
+        if (!mounted) return;
+
+        setClients(data);
+      } catch (e) {
+        console.error(e);
+        if (mounted) {
+          setError("Error cargando los clientes");
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   /* ======================
      FILTERED LIST
   ====================== */
   const filteredClients = useMemo(() => {
+    const q = search.trim().toLowerCase();
+
     return clients
       .filter((c) =>
-        c.name.toLowerCase().includes(search.toLowerCase())
+        q ? c.name.toLowerCase().includes(q) : true
       )
       .filter((c) => {
-        if (filter === "withDiet") return c.currentDiet;
+        if (filter === "withDiet") return Boolean(c.currentDiet);
         if (filter === "noDiet") return !c.currentDiet;
         return true;
       });
@@ -110,63 +138,69 @@ export default function ClientsPage() {
         </p>
       )}
 
-      {!loading && filteredClients.length === 0 && (
+      {error && (
+        <p className="text-red-400">
+          {error}
+        </p>
+      )}
+
+      {!loading && !error && filteredClients.length === 0 && (
         <p className="text-white/60">
           No hay clientes que coincidan con el filtro.
         </p>
       )}
 
       {/* GRID */}
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredClients.map((client) => (
-          <Link
-            key={client.id}
-            href={`/clients/${client.id}`}
-            className="group card space-y-5 hover:border-[var(--color-accent)] transition"
-          >
-            {/* NAME */}
-            <div>
-              <h3 className="text-xl font-medium text-white">
-                {client.name}
-              </h3>
+      {!loading && !error && filteredClients.length > 0 && (
+        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredClients.map((client) => (
+            <Link
+              key={client.id}
+              href={`/clients/${client.id}`}
+              className="group card space-y-5 hover:border-[var(--color-accent)] transition"
+            >
+              {/* NAME */}
+              <div>
+                <h3 className="text-xl font-medium text-white">
+                  {client.name}
+                </h3>
 
-              {client.email && (
-                <p className="text-sm text-white/50 mt-1">
-                  {client.email}
-                </p>
-              )}
-            </div>
+                {client.email && (
+                  <p className="text-sm text-white/50 mt-1">
+                    {client.email}
+                  </p>
+                )}
+              </div>
 
-            {/* DIET INFO */}
-            {client.currentDiet ? (
-              <div className="space-y-2">
-                <span className="inline-block text-xs px-3 py-1 rounded-full bg-white/10 text-white/70">
-                  🥗 {client.currentDiet.name}
-                </span>
+              {/* DIET INFO */}
+              {client.currentDiet ? (
+                <div className="space-y-2">
+                  <span className="inline-block text-xs px-3 py-1 rounded-full bg-white/10 text-white/70">
+                    🥗 {client.currentDiet.name}
+                  </span>
 
-                {client.currentDiet.totals && (
                   <div className="grid grid-cols-2 gap-2 text-xs text-white/70">
                     <p>🔥 {client.currentDiet.totals.kcal} kcal</p>
                     <p>🥩 {client.currentDiet.totals.protein} g</p>
                     <p>🍚 {client.currentDiet.totals.carbs} g</p>
                     <p>🥑 {client.currentDiet.totals.fat} g</p>
                   </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-white/40">
-                ❌ Sin dieta asignada
-              </p>
-            )}
+                </div>
+              ) : (
+                <p className="text-sm text-white/40">
+                  ❌ Sin dieta asignada
+                </p>
+              )}
 
-            {/* FOOTER */}
-            <p className="text-xs text-white/30 border-t border-white/10 pt-3">
-              Cliente desde{" "}
-              {new Date(client.created_at).toLocaleDateString()}
-            </p>
-          </Link>
-        ))}
-      </section>
+              {/* FOOTER */}
+              <p className="text-xs text-white/30 border-t border-white/10 pt-3">
+                Cliente desde{" "}
+                {new Date(client.created_at).toLocaleDateString()}
+              </p>
+            </Link>
+          ))}
+        </section>
+      )}
     </div>
   );
 }

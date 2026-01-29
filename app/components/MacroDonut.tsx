@@ -11,10 +11,16 @@ export default function MacroDonut({
   fat,
   kcal,
 }: Props) {
-  const total = protein + carbs + fat;
+  const safeProtein = Math.max(0, protein);
+  const safeCarbs = Math.max(0, carbs);
+  const safeFat = Math.max(0, fat);
+
+  const total = safeProtein + safeCarbs + safeFat;
   if (total === 0) return null;
 
-  // 🔵 MÁS GRANDE
+  /* =========================
+     DIMENSIONES
+  ========================= */
   const radius = 62;
   const stroke = 16;
   const size = 180;
@@ -22,9 +28,12 @@ export default function MacroDonut({
 
   const circumference = 2 * Math.PI * radius;
 
-  const proteinPct = protein / total;
-  const carbsPct = carbs / total;
-  const fatPct = fat / total;
+  /* =========================
+     PORCENTAJES
+  ========================= */
+  const proteinPct = safeProtein / total;
+  const carbsPct = safeCarbs / total;
+  const fatPct = safeFat / total;
 
   const proteinLen = circumference * proteinPct;
   const carbsLen = circumference * carbsPct;
@@ -43,7 +52,7 @@ export default function MacroDonut({
           fill="none"
         />
 
-        {/* PROTEÍNA (ROJO) */}
+        {/* PROTEÍNA */}
         <circle
           cx={center}
           cy={center}
@@ -109,16 +118,24 @@ export default function MacroDonut({
       {/* LEYENDA */}
       <div className="grid grid-cols-3 gap-6 text-xs text-white/80">
         <div className="flex flex-col items-center">
-          <span className="text-red-400 font-medium">Proteína</span>
-          <span>{protein.toFixed(0)} g</span>
+          <span className="text-red-400 font-medium">
+            Proteína
+          </span>
+          <span>{safeProtein.toFixed(0)} g</span>
         </div>
+
         <div className="flex flex-col items-center">
-          <span className="text-amber-400 font-medium">Carbs</span>
-          <span>{carbs.toFixed(0)} g</span>
+          <span className="text-amber-400 font-medium">
+            Carbs
+          </span>
+          <span>{safeCarbs.toFixed(0)} g</span>
         </div>
+
         <div className="flex flex-col items-center">
-          <span className="text-emerald-400 font-medium">Grasas</span>
-          <span>{fat.toFixed(0)} g</span>
+          <span className="text-emerald-400 font-medium">
+            Grasas
+          </span>
+          <span>{safeFat.toFixed(0)} g</span>
         </div>
       </div>
     </div>

@@ -11,9 +11,9 @@ import { DietDetail } from "@/lib/dietsApi";
    COLORES CORPORATIVOS
 ========================= */
 const COLORS = {
-  primary: "#2563EB",      // azul eléctrico
+  primary: "#2563EB",
   primaryDark: "#1E40AF",
-  text: "#020617",         // casi negro
+  text: "#020617",
   muted: "#475569",
   background: "#F8FAFC",
   card: "#FFFFFF",
@@ -120,17 +120,11 @@ const styles = StyleSheet.create({
 });
 
 /* =========================
-   TYPES
+   PROPS
 ========================= */
 type Props = {
   diet: DietDetail;
   clientName: string;
-  totals: {
-    kcal: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-  };
 };
 
 /* =========================
@@ -139,11 +133,26 @@ type Props = {
 export default function DietPdf({
   diet,
   clientName,
-  totals,
 }: Props) {
+  /* =========================
+     🔢 CÁLCULO DE TOTALES
+  ========================= */
+  const totals = diet.meals.reduce(
+    (acc, meal) => {
+      meal.items.forEach((item) => {
+        const factor = item.grams / 100;
+        acc.kcal += item.food.kcal_100 * factor;
+        acc.protein += item.food.protein_100 * factor;
+        acc.carbs += item.food.carbs_100 * factor;
+        acc.fat += item.food.fat_100 * factor;
+      });
+      return acc;
+    },
+    { kcal: 0, protein: 0, carbs: 0, fat: 0 }
+  );
+
   return (
     <Document>
-
       {/* ======================
           PORTADA + RESUMEN
       ====================== */}
@@ -206,7 +215,7 @@ export default function DietPdf({
       </Page>
 
       {/* ======================
-          COMIDAS (CONTINUAS)
+          COMIDAS
       ====================== */}
       <Page style={styles.page}>
         <Text style={styles.sectionTitle}>

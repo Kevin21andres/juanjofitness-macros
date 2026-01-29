@@ -18,21 +18,58 @@ export default function ClientDietPage({
   const [activeDiet, setActiveDiet] = useState<Diet | null>(null);
   const [history, setHistory] = useState<Diet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const load = async () => {
-      const active = await getActiveDiet(clientId);
-      const hist = await getDietHistory(clientId);
-      setActiveDiet(active);
-      setHistory(hist);
-      setLoading(false);
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [active, hist] = await Promise.all([
+          getActiveDiet(clientId),
+          getDietHistory(clientId),
+        ]);
+
+        if (!mounted) return;
+
+        setActiveDiet(active);
+
+        // 👉 Excluimos la dieta activa del histórico
+        setHistory(
+          hist.filter((d) => d.id !== active?.id)
+        );
+      } catch (e) {
+        console.error(e);
+        if (mounted) {
+          setError("Error cargando las dietas");
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
     };
 
     load();
+
+    return () => {
+      mounted = false;
+    };
   }, [clientId]);
 
   if (loading) {
     return <p className="text-white p-6">Cargando dieta…</p>;
+  }
+
+  if (error) {
+    return (
+      <p className="text-red-400 p-6">
+        {error}
+      </p>
+    );
   }
 
   return (
@@ -63,7 +100,9 @@ export default function ClientDietPage({
         {activeDiet ? (
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-white">{activeDiet.name}</p>
+              <p className="text-white">
+                {activeDiet.name}
+              </p>
               <p className="text-xs text-white/40">
                 Creada el{" "}
                 {new Date(activeDiet.created_at).toLocaleDateString()}
@@ -94,7 +133,7 @@ export default function ClientDietPage({
       {/* =====================
           HISTÓRICO
       ====================== */}
-      {history.length > 0 && (
+      {history.length > 0 ? (
         <section className="card space-y-3">
           <h3 className="text-white font-medium">
             Historial de dietas
@@ -119,6 +158,10 @@ export default function ClientDietPage({
               </li>
             ))}
           </ul>
+        </section>
+      ) : (
+        <section className="text-white/50 text-sm">
+          No hay dietas anteriores.
         </section>
       )}
     </div>
