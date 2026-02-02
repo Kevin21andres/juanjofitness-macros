@@ -11,8 +11,8 @@ import { DietDetail } from "@/lib/dietsApi";
    COLORES CORPORATIVOS
 ========================= */
 const COLORS = {
-  primary: "#2563EB",
-  primaryDark: "#1E40AF",
+  accent: "#1E90FF",
+  accentDark: "#1E3A8A",
   text: "#020617",
   muted: "#475569",
   background: "#F8FAFC",
@@ -32,61 +32,73 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
 
-  /* ---------- PORTADA ---------- */
-  coverTitle: {
-    fontSize: 28,
-    fontFamily: "Helvetica-Bold",
-    color: COLORS.primary,
-    marginBottom: 6,
+  /* ---------- HERO ---------- */
+  hero: {
+    backgroundColor: COLORS.accent,
+    padding: 24,
+    borderRadius: 14,
+    marginBottom: 28,
   },
 
-  coverSubtitle: {
-    fontSize: 16,
+  heroTitle: {
+    fontSize: 26,
     fontFamily: "Helvetica-Bold",
-    marginBottom: 20,
-  },
-
-  coverMeta: {
-    fontSize: 11,
-    color: COLORS.muted,
+    color: "#FFFFFF",
     marginBottom: 4,
   },
 
-  divider: {
-    height: 3,
-    backgroundColor: COLORS.primary,
-    marginVertical: 24,
+  heroSubtitle: {
+    fontSize: 14,
+    fontFamily: "Helvetica-Bold",
+    color: "#E0F2FE",
+  },
+
+  heroMeta: {
+    fontSize: 10,
+    color: "#DBEAFE",
+    marginTop: 6,
   },
 
   /* ---------- SECCIONES ---------- */
   sectionTitle: {
     fontSize: 16,
     fontFamily: "Helvetica-Bold",
-    color: COLORS.primaryDark,
+    color: COLORS.accentDark,
     marginBottom: 12,
   },
 
   card: {
     backgroundColor: COLORS.card,
     padding: 14,
-    borderRadius: 8,
-    marginBottom: 12,
+    borderRadius: 10,
+    marginBottom: 14,
     border: `1 solid ${COLORS.border}`,
   },
 
   /* ---------- RESUMEN ---------- */
-  macroRow: {
+  macroGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 6,
+  },
+
+  macroBox: {
+    width: "48%",
+    padding: 10,
+    borderRadius: 8,
+    border: `1 solid ${COLORS.border}`,
+    marginBottom: 8,
   },
 
   macroLabel: {
+    fontSize: 10,
     color: COLORS.muted,
+    marginBottom: 2,
   },
 
   macroValue: {
+    fontSize: 13,
     fontFamily: "Helvetica-Bold",
+    color: COLORS.accent,
   },
 
   /* ---------- COMIDAS ---------- */
@@ -94,13 +106,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Helvetica-Bold",
     marginBottom: 8,
-    color: COLORS.primary,
+    color: COLORS.accent,
   },
 
   foodRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 4,
+    paddingVertical: 4,
+    borderBottom: `1 solid ${COLORS.border}`,
   },
 
   foodName: {
@@ -115,12 +128,12 @@ const styles = StyleSheet.create({
   notesText: {
     fontSize: 11,
     color: COLORS.text,
-    lineHeight: 1.4,
+    lineHeight: 1.5,
     whiteSpace: "pre-wrap",
   },
 
   footer: {
-    marginTop: 30,
+    marginTop: 32,
     fontSize: 9,
     color: COLORS.muted,
     textAlign: "center",
@@ -138,12 +151,9 @@ type Props = {
 /* =========================
    PDF
 ========================= */
-export default function DietPdf({
-  diet,
-  clientName,
-}: Props) {
+export default function DietPdf({ diet, clientName }: Props) {
   /* =========================
-     🔢 CÁLCULO DE TOTALES
+     🔢 TOTALES
   ========================= */
   const totals = diet.meals.reduce(
     (acc, meal) => {
@@ -165,60 +175,75 @@ export default function DietPdf({
           PORTADA + RESUMEN
       ====================== */}
       <Page style={styles.page}>
-        <Text style={styles.coverTitle}>
-          Plan Nutricional
-        </Text>
+        {/* HERO */}
+        <View style={styles.hero}>
+          <Text style={styles.heroTitle}>
+            Plan Nutricional
+          </Text>
 
-        <Text style={styles.coverSubtitle}>
-          {clientName}
-        </Text>
+          <Text style={styles.heroSubtitle}>
+            {clientName}
+          </Text>
 
-        <Text style={styles.coverMeta}>
-          Dieta: {diet.name}
-        </Text>
+          <Text style={styles.heroMeta}>
+            Dieta: {diet.name}
+          </Text>
 
-        <Text style={styles.coverMeta}>
-          Fecha: {new Date(diet.created_at).toLocaleDateString()}
-        </Text>
+          <Text style={styles.heroMeta}>
+            Fecha:{" "}
+            {new Date(diet.created_at).toLocaleDateString()}
+          </Text>
+        </View>
 
-        <View style={styles.divider} />
-
+        {/* RESUMEN */}
         <Text style={styles.sectionTitle}>
-          Resumen Nutricional
+          Resumen nutricional diario
         </Text>
 
         <View style={styles.card}>
-          <View style={styles.macroRow}>
-            <Text style={styles.macroLabel}>🔥 Energía</Text>
-            <Text style={styles.macroValue}>
-              {totals.kcal.toFixed(0)} kcal
-            </Text>
+          <View style={styles.macroGrid}>
+            <View style={styles.macroBox}>
+              <Text style={styles.macroLabel}>
+                Energía
+              </Text>
+              <Text style={styles.macroValue}>
+                {totals.kcal.toFixed(0)} kcal
+              </Text>
+            </View>
+
+            <View style={styles.macroBox}>
+              <Text style={styles.macroLabel}>
+                Proteína
+              </Text>
+              <Text style={styles.macroValue}>
+                {totals.protein.toFixed(1)} g
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.macroRow}>
-            <Text style={styles.macroLabel}>🥩 Proteína</Text>
-            <Text style={styles.macroValue}>
-              {totals.protein.toFixed(1)} g
-            </Text>
-          </View>
+          <View style={styles.macroGrid}>
+            <View style={styles.macroBox}>
+              <Text style={styles.macroLabel}>
+                Carbohidratos
+              </Text>
+              <Text style={styles.macroValue}>
+                {totals.carbs.toFixed(1)} g
+              </Text>
+            </View>
 
-          <View style={styles.macroRow}>
-            <Text style={styles.macroLabel}>🍚 Carbohidratos</Text>
-            <Text style={styles.macroValue}>
-              {totals.carbs.toFixed(1)} g
-            </Text>
-          </View>
-
-          <View style={styles.macroRow}>
-            <Text style={styles.macroLabel}>🥑 Grasas</Text>
-            <Text style={styles.macroValue}>
-              {totals.fat.toFixed(1)} g
-            </Text>
+            <View style={styles.macroBox}>
+              <Text style={styles.macroLabel}>
+                Grasas
+              </Text>
+              <Text style={styles.macroValue}>
+                {totals.fat.toFixed(1)} g
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* 📝 NOTAS */}
-        {diet.notes && diet.notes.trim().length > 0 && (
+        {/* NOTAS */}
+        {diet.notes?.trim() && (
           <>
             <Text style={styles.sectionTitle}>
               Notas y recomendaciones
@@ -233,7 +258,7 @@ export default function DietPdf({
         )}
 
         <Text style={styles.footer}>
-          Plan generado automáticamente · Nutrición personalizada
+          Plan nutricional generado con JuanjoFitness
         </Text>
       </Page>
 
@@ -242,7 +267,7 @@ export default function DietPdf({
       ====================== */}
       <Page style={styles.page}>
         <Text style={styles.sectionTitle}>
-          Comidas
+          Distribución de comidas
         </Text>
 
         {diet.meals
