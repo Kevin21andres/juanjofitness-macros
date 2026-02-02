@@ -70,11 +70,11 @@ export default function NewClientPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0B0B] p-6 flex justify-center">
-      <div className="w-full max-w-2xl space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#0B0B0B] via-[#0E1622] to-[#0B0B0B] px-6 py-10 flex justify-center">
+      <div className="w-full max-w-3xl space-y-10">
 
         {/* HEADER */}
-        <header className="space-y-1">
+        <header className="space-y-2">
           <Link
             href="/clients"
             className="text-sm text-[var(--color-accent)] hover:underline"
@@ -82,56 +82,69 @@ export default function NewClientPage() {
             ← Clientes
           </Link>
 
-          <h1 className="text-3xl font-semibold text-white tracking-tight">
+          <h1 className="text-4xl font-semibold text-white tracking-tight">
             Nuevo cliente
           </h1>
 
           <p className="text-sm text-white/50">
-            Añade un nuevo cliente para gestionar su dieta y seguimiento
+            Añade un nuevo cliente para iniciar su seguimiento nutricional
           </p>
         </header>
 
         {/* FORM */}
-        <form onSubmit={submit} className="card space-y-8">
+        <form
+          onSubmit={submit}
+          className="rounded-2xl border border-white/10 bg-[#111]/70 backdrop-blur-xl p-8 space-y-10 shadow-xl"
+        >
 
           {/* DATOS OBLIGATORIOS */}
-          <section className="space-y-4">
-            <h2 className="text-white font-medium text-lg">
+          <section className="space-y-5">
+            <h2 className="text-lg font-medium text-white">
               📌 Datos obligatorios
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="text-xs text-white/60">Nombre *</label>
+                <label className="text-xs text-white/50">
+                  Nombre *
+                </label>
                 <input
                   name="name"
-                  className="input mt-1"
                   value={form.name}
                   onChange={onChange}
+                  className="mt-1 w-full rounded-lg bg-[#0B0B0B] border border-white/10 px-3 py-2 text-white
+                             placeholder:text-white/30 focus:outline-none focus:border-[var(--color-accent)]
+                             focus:ring-1 focus:ring-[var(--color-accent)]"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-white/60">Apellidos *</label>
+                <label className="text-xs text-white/50">
+                  Apellidos *
+                </label>
                 <input
                   name="surname"
-                  className="input mt-1"
                   value={form.surname}
                   onChange={onChange}
+                  className="mt-1 w-full rounded-lg bg-[#0B0B0B] border border-white/10 px-3 py-2 text-white
+                             focus:outline-none focus:border-[var(--color-accent)]
+                             focus:ring-1 focus:ring-[var(--color-accent)]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs text-white/60">
+              <label className="text-xs text-white/50">
                 Correo electrónico *
               </label>
               <input
                 name="email"
                 type="email"
-                className="input mt-1"
                 value={form.email}
                 onChange={onChange}
+                className="mt-1 w-full rounded-lg bg-[#0B0B0B] border border-white/10 px-3 py-2 text-white
+                           focus:outline-none focus:border-[var(--color-accent)]
+                           focus:ring-1 focus:ring-[var(--color-accent)]"
               />
               <p className="text-xs text-white/40 mt-1">
                 Se usará para enviar la dieta por email
@@ -139,15 +152,17 @@ export default function NewClientPage() {
             </div>
 
             <div>
-              <label className="text-xs text-white/60">
+              <label className="text-xs text-white/50">
                 Teléfono con prefijo *
               </label>
               <input
                 name="phone"
-                className="input mt-1"
                 placeholder="+34 650 149 708"
                 value={form.phone}
                 onChange={onChange}
+                className="mt-1 w-full rounded-lg bg-[#0B0B0B] border border-white/10 px-3 py-2 text-white
+                           focus:outline-none focus:border-[var(--color-accent)]
+                           focus:ring-1 focus:ring-[var(--color-accent)]"
               />
               <p className="text-xs text-white/40 mt-1">
                 Se usará para enviar la dieta por WhatsApp
@@ -157,17 +172,22 @@ export default function NewClientPage() {
 
           {/* DATOS OPCIONALES */}
           <section className="space-y-4 border-t border-white/10 pt-6">
-            <h2 className="text-white font-medium text-lg">
+            <h2 className="text-lg font-medium text-white">
               📝 Información adicional
             </h2>
 
             <div>
-              <label className="text-xs text-white/60">Notas</label>
+              <label className="text-xs text-white/50">
+                Notas
+              </label>
               <textarea
                 name="notes"
-                className="input mt-1 min-h-[90px]"
                 value={form.notes}
                 onChange={onChange}
+                rows={4}
+                className="mt-1 w-full rounded-lg bg-[#0B0B0B] border border-white/10 px-3 py-2 text-white resize-none
+                           focus:outline-none focus:border-[var(--color-accent)]
+                           focus:ring-1 focus:ring-[var(--color-accent)]"
               />
             </div>
           </section>
@@ -180,7 +200,8 @@ export default function NewClientPage() {
           <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
             <Link
               href="/clients"
-              className="px-4 py-2 rounded-lg border border-white/20 text-white/70 text-sm hover:bg-white/5 transition"
+              className="px-4 py-2 rounded-lg border border-white/20 text-white/70 text-sm
+                         hover:bg-white/5 transition"
             >
               Cancelar
             </Link>
@@ -188,7 +209,8 @@ export default function NewClientPage() {
             <button
               type="submit"
               disabled={loading || !isFormValid}
-              className="bg-[var(--color-accent)] px-6 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50 transition"
+              className="px-6 py-2 rounded-lg bg-[var(--color-accent)] text-white text-sm font-medium
+                         transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Creando cliente…" : "Crear cliente"}
             </button>

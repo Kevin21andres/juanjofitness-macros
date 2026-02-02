@@ -29,11 +29,7 @@ export default function HomePage() {
           </h1>
 
           <p className="text-white/60">
-            Juanjo<span className="text-[var(--color-accent)]">Fitness</span> · Gestión nutricional interna
-          </p>
-
-          <p className="text-xs text-white/40">
-            Bienvenido de nuevo 👋
+            Juanjo<span className="text-[var(--color-accent)]">Fitness</span> · Gestión nutricional
           </p>
         </header>
 
