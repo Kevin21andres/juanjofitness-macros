@@ -30,29 +30,35 @@ export function generateDietPdf(
   let y = 20;
 
   /* =========================
-     🔵 HEADER (PORTADA LIGERA)
+     🔵 PORTADA / HERO
   ========================= */
   doc.setFillColor(...ACCENT);
-  doc.rect(0, 0, pageWidth, 45, "F");
+  doc.rect(0, 0, pageWidth, 50, "F");
 
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
-  doc.text("PLAN NUTRICIONAL", 20, 22);
+  doc.setFontSize(24);
+  doc.text("PLAN NUTRICIONAL", 20, 24);
 
-  doc.setFontSize(14);
-  doc.text(clientName, 20, 32);
+  doc.setFontSize(15);
+  doc.text(clientName, 20, 34);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text(
+    diet.name,
+    20,
+    42
+  );
+
+  doc.text(
     `Fecha: ${new Date().toLocaleDateString()}`,
     pageWidth - 20,
-    32,
+    42,
     { align: "right" }
   );
 
-  y = 60;
+  y = 65;
 
   /* =========================
      🔢 CÁLCULO TOTALES
@@ -75,35 +81,37 @@ export function generateDietPdf(
   /* =========================
      📊 RESUMEN DIARIO
   ========================= */
-  doc.setFillColor(...CARD_BG);
-  doc.roundedRect(14, y, pageWidth - 28, 32, 8, 8, "F");
-
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
+  doc.setFontSize(16);
   doc.setTextColor(...DARK);
-  doc.text("Resumen diario", 20, y + 10);
+  doc.text("Resumen diario", 14, y);
+  y += 6;
 
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "normal");
+  doc.setFillColor(...CARD_BG);
+  doc.roundedRect(14, y, pageWidth - 28, 36, 10, 10, "F");
 
   const cols = [22, 70, 118, 160];
-  const labels = ["Kcal", "Proteína", "Carbohidratos", "Grasas"];
+  const labels = ["Energía", "Proteína", "Carbohidratos", "Grasas"];
   const values = [
-    totals.kcal.toFixed(0),
+    `${totals.kcal.toFixed(0)} kcal`,
     `${totals.protein.toFixed(1)} g`,
     `${totals.carbs.toFixed(1)} g`,
     `${totals.fat.toFixed(1)} g`,
   ];
 
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+
   labels.forEach((label, i) => {
     doc.setTextColor(...MUTED);
-    doc.text(label, cols[i], y + 20);
-    doc.setTextColor(...ACCENT);
+    doc.text(label, cols[i], y + 14);
+
     doc.setFont("helvetica", "bold");
-    doc.text(values[i], cols[i], y + 28);
+    doc.setTextColor(...ACCENT);
+    doc.text(values[i], cols[i], y + 24);
   });
 
-  y += 45;
+  y += 50;
 
   /* =========================
      🍽️ COMIDAS
@@ -123,12 +131,12 @@ export function generateDietPdf(
         styles: {
           fontSize: 10,
           textColor: DARK,
-          cellPadding: 5,
+          cellPadding: 6,
         },
-        head: [[`Comida ${index + 1}`, "Cantidad (g)"]],
+        head: [[`🍽️ Comida ${index + 1}`, "Cantidad"]],
         body: meal.items.map((item) => [
           item.food.name,
-          item.grams.toString(),
+          `${item.grams} g`,
         ]),
         headStyles: {
           fillColor: CARD_BG,
@@ -139,9 +147,9 @@ export function generateDietPdf(
       });
 
       const last = (doc as any).lastAutoTable;
-      y = last ? last.finalY + 8 : y + 8;
+      y = last ? last.finalY + 10 : y + 10;
 
-      if (y > pageHeight - 40) {
+      if (y > pageHeight - 50) {
         doc.addPage();
         y = 20;
       }
@@ -151,20 +159,19 @@ export function generateDietPdf(
      📝 NOTAS
   ========================= */
   if (diet.notes?.trim()) {
-    if (y + 40 > pageHeight - 20) {
+    if (y + 50 > pageHeight - 20) {
       doc.addPage();
       y = 20;
     }
 
-    doc.setFillColor(...CARD_BG);
-    doc.roundedRect(14, y, pageWidth - 28, 10, 6, 6, "F");
-
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.setTextColor(...ACCENT);
-    doc.text("Notas y recomendaciones", 18, y + 7);
+    doc.setFontSize(16);
+    doc.setTextColor(...DARK);
+    doc.text("Notas y recomendaciones", 14, y);
+    y += 6;
 
-    y += 16;
+    doc.setFillColor(...CARD_BG);
+    doc.roundedRect(14, y, pageWidth - 28, 12, 8, 8, "F");
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
@@ -174,7 +181,9 @@ export function generateDietPdf(
       diet.notes,
       pageWidth - 36
     );
-    doc.text(text, 18, y);
+    doc.text(text, 18, y + 10);
+
+    y += text.length * 6 + 16;
   }
 
   /* =========================
