@@ -36,11 +36,7 @@ export default function ClientDietPage({
         if (!mounted) return;
 
         setActiveDiet(active);
-
-        // 👉 Excluimos la dieta activa del histórico
-        setHistory(
-          hist.filter((d) => d.id !== active?.id)
-        );
+        setHistory(hist.filter((d) => d.id !== active?.id));
       } catch (e) {
         console.error(e);
         if (mounted) {
@@ -61,46 +57,64 @@ export default function ClientDietPage({
   }, [clientId]);
 
   if (loading) {
-    return <p className="text-white p-6">Cargando dieta…</p>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0B0B0B]">
+        <p className="text-white/60">Cargando dieta…</p>
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <p className="text-red-400 p-6">
-        {error}
-      </p>
+      <div className="min-h-screen flex items-center justify-center bg-[#0B0B0B]">
+        <p className="text-red-400">{error}</p>
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0B0B] p-6 space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#0B0B0B] via-[#0E1622] to-[#0B0B0B] px-6 py-10 space-y-10">
 
       {/* HEADER */}
-      <header>
+      <header className="space-y-1">
         <Link
           href={`/clients/${clientId}`}
-          className="text-sm text-[var(--color-accent)]"
+          className="text-sm text-[var(--color-accent)] hover:underline"
         >
           ← Volver al cliente
         </Link>
 
-        <h1 className="text-2xl font-semibold text-white mt-2">
-          Dieta
+        <h1 className="text-3xl font-semibold text-white tracking-tight">
+          Dietas
         </h1>
+
+        <p className="text-sm text-white/50">
+          Gestión del plan nutricional
+        </p>
       </header>
 
       {/* =====================
           DIETA ACTIVA
       ====================== */}
-      <section className="card space-y-3">
-        <h2 className="text-white font-medium text-lg">
-          Dieta actual
-        </h2>
+      <section className="rounded-2xl border border-[var(--color-accent)]/40 bg-[#111]/80 backdrop-blur-xl shadow-xl p-6 space-y-4 max-w-3xl">
+
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium text-white">
+            🟢 Dieta activa
+          </h2>
+
+          <Link
+            href={`/calculator?clientId=${clientId}`}
+            className="text-sm bg-[var(--color-accent)] px-4 py-2 rounded-lg text-white font-medium hover:brightness-110 transition"
+          >
+            {activeDiet ? "Cambiar dieta" : "Crear dieta"}
+          </Link>
+        </div>
 
         {activeDiet ? (
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-white">
+          <div className="flex justify-between items-center gap-4">
+            <div className="space-y-1">
+              <p className="text-white font-medium">
                 {activeDiet.name}
               </p>
               <p className="text-xs text-white/40">
@@ -111,59 +125,58 @@ export default function ClientDietPage({
 
             <Link
               href={`/clients/${clientId}/diet/${activeDiet.id}`}
-              className="text-sm text-[var(--color-accent)]"
+              className="text-sm text-[var(--color-accent)] hover:underline"
             >
               Ver dieta →
             </Link>
           </div>
         ) : (
-          <p className="text-white/60 text-sm">
-            No hay dieta activa.
+          <p className="text-sm text-white/60">
+            No hay ninguna dieta activa actualmente.
           </p>
         )}
-
-        <Link
-          href={`/calculator?clientId=${clientId}`}
-          className="inline-block mt-2 bg-[var(--color-accent)] px-4 py-2 rounded-lg text-white text-sm"
-        >
-          {activeDiet ? "Cambiar dieta" : "Crear dieta"}
-        </Link>
       </section>
 
       {/* =====================
           HISTÓRICO
       ====================== */}
-      {history.length > 0 ? (
-        <section className="card space-y-3">
-          <h3 className="text-white font-medium">
-            Historial de dietas
-          </h3>
+      <section className="rounded-2xl border border-white/10 bg-[#111]/70 backdrop-blur-xl shadow-lg p-6 space-y-4 max-w-3xl">
 
-          <ul className="space-y-2">
+        <h3 className="text-white font-medium text-lg">
+          📚 Historial de dietas
+        </h3>
+
+        {history.length === 0 ? (
+          <p className="text-sm text-white/50">
+            No hay dietas anteriores.
+          </p>
+        ) : (
+          <ul className="divide-y divide-white/10">
             {history.map((diet) => (
               <li
                 key={diet.id}
-                className="flex justify-between items-center"
+                className="flex justify-between items-center py-3"
               >
-                <span className="text-sm text-white/80">
-                  {diet.name}
-                </span>
+                <div>
+                  <p className="text-sm text-white/80">
+                    {diet.name}
+                  </p>
+                  <p className="text-xs text-white/40">
+                    {new Date(diet.created_at).toLocaleDateString()}
+                  </p>
+                </div>
 
                 <Link
                   href={`/clients/${clientId}/diet/${diet.id}`}
-                  className="text-xs text-[var(--color-accent)]"
+                  className="text-xs text-[var(--color-accent)] hover:underline"
                 >
                   Ver →
                 </Link>
               </li>
             ))}
           </ul>
-        </section>
-      ) : (
-        <section className="text-white/50 text-sm">
-          No hay dietas anteriores.
-        </section>
-      )}
+        )}
+      </section>
     </div>
   );
 }

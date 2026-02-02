@@ -102,16 +102,16 @@ export default function CalculatorClient() {
   }, [clients, query]);
 
   return (
-    <div className="min-h-screen bg-[#0B0B0B] p-6 space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#0B0B0B] via-[#0E1622] to-[#0B0B0B] px-6 py-10 space-y-10">
 
-      {/* HEADER */}
+      {/* HEADER / HERO */}
       <header className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-semibold text-white tracking-tight">
             Calculadora de dieta
           </h1>
-          <p className="text-sm text-white/60">
-            Planificación por comidas
+          <p className="text-sm text-white/50">
+            Planificación nutricional por comidas
           </p>
         </div>
 
@@ -123,14 +123,16 @@ export default function CalculatorClient() {
         </Link>
       </header>
 
-      {/* CLIENTE */}
-      <section className="card space-y-3">
-        <label className="text-sm text-white/70">
-          Cliente
-        </label>
+      {/* SELECCIÓN DE CLIENTE */}
+      <section className="rounded-2xl border border-white/10 bg-[#111]/70 backdrop-blur-xl shadow-xl p-6 space-y-4 max-w-2xl">
+
+        <h2 className="text-white font-medium text-lg">
+          👤 Seleccionar cliente
+        </h2>
 
         <input
-          className="input"
+          className="w-full rounded-lg bg-[#0B0B0B] border border-white/10 px-3 py-2 text-white placeholder:text-white/30
+                     focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]"
           placeholder="Buscar cliente…"
           value={query}
           onChange={(e) => {
@@ -142,7 +144,7 @@ export default function CalculatorClient() {
           disabled={loadingClients}
         />
 
-        <div className="max-h-48 overflow-auto border border-white/10 rounded-lg">
+        <div className="max-h-52 overflow-auto rounded-lg border border-white/10 bg-[#0B0B0B]">
           {loadingClients && (
             <p className="px-4 py-2 text-sm text-white/40">
               Cargando clientes…
@@ -167,7 +169,13 @@ export default function CalculatorClient() {
                   setSavedDiet(null);
                   setSavedDietId(null);
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-white/80 hover:bg-white/5"
+                className={`w-full text-left px-4 py-2 text-sm transition
+                  ${
+                    selectedClient?.id === client.id
+                      ? "bg-[var(--color-accent)] text-white"
+                      : "text-white/80 hover:bg-white/5"
+                  }
+                `}
               >
                 {client.name}
               </button>
@@ -192,7 +200,7 @@ export default function CalculatorClient() {
         />
       )}
 
-      {/* MODAL */}
+      {/* MODAL GUARDADO */}
       {savedDiet && selectedClient && (
         <SaveDietModal
           clientName={selectedClient.name}
@@ -208,10 +216,12 @@ export default function CalculatorClient() {
 
       {/* LOADING OVERLAY */}
       {loadingDiet && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center">
-          <p className="text-white text-sm">
-            ⏳ Preparando resumen de la dieta…
-          </p>
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="rounded-xl border border-white/10 bg-[#111]/80 px-6 py-4 shadow-xl">
+            <p className="text-sm text-white">
+              ⏳ Preparando resumen de la dieta…
+            </p>
+          </div>
         </div>
       )}
     </div>
