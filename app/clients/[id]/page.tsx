@@ -44,18 +44,13 @@ export default function ClientPage({ params }: Props) {
         setHistory(hist.filter((d) => d.id !== active?.id));
       } catch (e) {
         console.error(e);
-        if (mounted) {
-          setError("Error cargando el cliente");
-        }
+        if (mounted) setError("Error cargando el cliente");
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     };
 
     load();
-
     return () => {
       mounted = false;
     };
@@ -74,32 +69,33 @@ export default function ClientPage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0B0B] p-6 space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#0B0B0B] via-[#0E1622] to-[#0B0B0B] px-6 py-10 space-y-10">
 
       {/* HEADER */}
-      <header className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">
+      <header className="flex flex-col sm:flex-row justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-semibold text-white tracking-tight">
             {client.name}
           </h1>
 
           {client.email && (
-            <p className="text-white/60 text-sm">
+            <p className="text-sm text-white/60">
               {client.email}
             </p>
           )}
 
           {client.phone && (
-            <p className="text-white/40 text-xs">
+            <p className="text-xs text-white/40">
               📲 {client.phone}
             </p>
           )}
         </div>
 
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-row sm:flex-col gap-3 sm:items-end">
           <Link
             href={`/clients/${clientId}/edit`}
-            className="text-sm text-white bg-white/10 px-3 py-1.5 rounded-lg hover:bg-white/20 transition"
+            className="px-4 py-2 rounded-lg bg-white/10 text-white text-sm
+                       hover:bg-white/20 transition"
           >
             Editar cliente
           </Link>
@@ -113,10 +109,10 @@ export default function ClientPage({ params }: Props) {
         </div>
       </header>
 
-      {/* 📝 NOTAS CLIENTE */}
-      {client.notes && client.notes.trim().length > 0 && (
-        <section className="card space-y-2">
-          <h2 className="text-white font-medium text-lg">
+      {/* NOTAS CLIENTE */}
+      {client.notes?.trim() && (
+        <section className="rounded-2xl border border-white/10 bg-[#111]/70 backdrop-blur-xl p-6 shadow-xl space-y-2">
+          <h2 className="text-lg font-medium text-white">
             📝 Notas del cliente
           </h2>
 
@@ -127,15 +123,15 @@ export default function ClientPage({ params }: Props) {
       )}
 
       {/* DIETA ACTIVA */}
-      <section className="card space-y-3">
-        <h2 className="text-white font-medium text-lg">
+      <section className="rounded-2xl border border-white/10 bg-[#111]/70 backdrop-blur-xl p-6 shadow-xl space-y-4">
+        <h2 className="text-lg font-medium text-white">
           Dieta actual
         </h2>
 
         {activeDiet ? (
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-4">
             <div>
-              <p className="text-white">
+              <p className="text-white font-medium">
                 {activeDiet.name}
               </p>
               <p className="text-xs text-white/40">
@@ -146,44 +142,46 @@ export default function ClientPage({ params }: Props) {
 
             <Link
               href={`/clients/${clientId}/diet/${activeDiet.id}`}
-              className="text-sm text-[var(--color-accent)]"
+              className="text-sm text-[var(--color-accent)] hover:underline"
             >
               Ver dieta →
             </Link>
           </div>
         ) : (
-          <p className="text-white/60 text-sm">
+          <p className="text-sm text-white/50">
             Este cliente no tiene una dieta activa.
           </p>
         )}
 
         <Link
           href={`/calculator?clientId=${clientId}`}
-          className="inline-block mt-2 bg-[var(--color-accent)] px-4 py-2 rounded-lg text-white text-sm"
+          className="inline-flex items-center justify-center mt-2 rounded-lg
+                     bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white
+                     transition hover:brightness-110"
         >
           {activeDiet ? "Cambiar dieta" : "Crear dieta"}
         </Link>
       </section>
 
       {/* HISTÓRICO */}
-      <section className="card space-y-4">
-        <h2 className="text-white font-medium text-lg">
+      <section className="rounded-2xl border border-white/10 bg-[#111]/70 backdrop-blur-xl p-6 shadow-xl space-y-4">
+        <h2 className="text-lg font-medium text-white">
           Historial de dietas
         </h2>
 
         {history.length === 0 ? (
-          <p className="text-white/60 text-sm">
+          <p className="text-sm text-white/50">
             No hay dietas anteriores.
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {history.map((diet) => (
               <li
                 key={diet.id}
-                className="flex justify-between items-center border-b border-white/10 pb-2"
+                className="flex justify-between items-center border-b border-white/10 pb-3 last:border-none"
               >
                 <div>
-                  <p className="text-white text-sm">
+                  <p className="text-sm text-white">
                     {diet.name}
                   </p>
                   <p className="text-xs text-white/40">
@@ -193,7 +191,7 @@ export default function ClientPage({ params }: Props) {
 
                 <Link
                   href={`/clients/${clientId}/diet/${diet.id}`}
-                  className="text-xs text-[var(--color-accent)]"
+                  className="text-xs text-[var(--color-accent)] hover:underline"
                 >
                   Ver →
                 </Link>
