@@ -14,17 +14,24 @@ export default async function SharedDietPage({
   const { diet } = sharedDiet;
 
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-10">
+    <div className="min-h-screen bg-gradient-to-br from-[#0B0B0B] via-[#0E1622] to-[#0B0B0B] text-white">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-12">
 
-        {/* HEADER */}
-        <header className="space-y-4">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[var(--foreground)]">
-            {diet.name}
-          </h1>
+        {/* =====================
+            HERO / PORTADA
+        ====================== */}
+        <header className="space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
+              {diet.name}
+            </h1>
+            <p className="text-sm text-white/50">
+              Plan nutricional personalizado
+            </p>
+          </div>
 
           {/* Totales */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <Stat label="Energía" value={`${diet.totals.kcal} kcal`} />
             <Stat label="Proteína" value={`${diet.totals.protein} g`} />
             <Stat label="Carbohidratos" value={`${diet.totals.carbs} g`} />
@@ -32,9 +39,11 @@ export default async function SharedDietPage({
           </div>
         </header>
 
-        {/* NOTAS */}
+        {/* =====================
+            NOTAS
+        ====================== */}
         {diet.notes?.trim() && (
-          <section className="rounded-2xl border border-[var(--color-accent)]/30 bg-[#0f172a]/40 p-5 space-y-3">
+          <section className="rounded-2xl border border-[var(--color-accent)]/30 bg-[#111]/80 backdrop-blur-xl shadow-lg p-6 space-y-3">
             <h2 className="text-sm font-medium flex items-center gap-2 text-[var(--color-accent)]">
               📝 Notas y recomendaciones
             </h2>
@@ -45,14 +54,16 @@ export default async function SharedDietPage({
           </section>
         )}
 
-        {/* COMIDAS */}
+        {/* =====================
+            COMIDAS
+        ====================== */}
         <section className="space-y-6">
           {diet.meals
             .sort((a, b) => a.meal_index - b.meal_index)
             .map((meal) => (
               <div
                 key={meal.id}
-                className="rounded-2xl border border-white/10 bg-[#111] p-5 space-y-4"
+                className="rounded-2xl border border-white/10 bg-[#111]/80 backdrop-blur-xl shadow-lg p-6 space-y-4"
               >
                 <h2 className="text-sm font-medium flex items-center gap-2 text-[var(--color-accent)]">
                   🍽️ Comida {meal.meal_index + 1}
@@ -64,7 +75,7 @@ export default async function SharedDietPage({
                       key={item.id}
                       className="flex justify-between items-center py-2"
                     >
-                      <span className="text-white/85">
+                      <span className="text-white/90">
                         {item.food.name}
                       </span>
                       <span className="text-white/50 text-xs">
@@ -77,8 +88,10 @@ export default async function SharedDietPage({
             ))}
         </section>
 
-        {/* FOOTER */}
-        <footer className="pt-6 text-center text-[11px] text-white/40">
+        {/* =====================
+            FOOTER
+        ====================== */}
+        <footer className="pt-6 text-center text-xs text-white/40">
           Plan nutricional generado con{" "}
           <span className="text-[var(--color-accent)] font-medium">
             JuanjoFitness
@@ -100,7 +113,7 @@ function Stat({
   value: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-[#111] px-4 py-3">
+    <div className="rounded-xl border border-white/10 bg-[#111]/80 backdrop-blur-xl px-4 py-3 shadow">
       <p className="text-[11px] uppercase tracking-wide text-white/40">
         {label}
       </p>
