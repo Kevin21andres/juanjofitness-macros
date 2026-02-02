@@ -6,10 +6,13 @@ import { supabaseBrowser } from "@/lib/supabaseBrowser";
 
 export default function LoginPage() {
   const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [leaving, setLeaving] = useState(false); // 👈 transición
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,21 +27,32 @@ export default function LoginPage() {
         password,
       });
 
-    setLoading(false);
-
     if (error) {
+      setLoading(false);
       setError("Credenciales incorrectas");
       return;
     }
 
-    router.push("/home");
+    // ✨ animación de salida
+    setLeaving(true);
+
+    setTimeout(() => {
+      router.push("/home");
+    }, 400);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0B0B0B] via-[#0E1622] to-[#0B0B0B] px-4">
 
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#111]/80 backdrop-blur-xl shadow-xl p-8 space-y-6">
-
+      {/* CARD LOGIN */}
+      <div
+        className={`
+          w-full max-w-sm rounded-2xl border border-white/10
+          bg-[#111]/80 backdrop-blur-xl shadow-xl p-8 space-y-6
+          transition-all duration-300 ease-out
+          ${leaving ? "opacity-0 scale-95" : "opacity-100 scale-100"}
+        `}
+      >
         {/* LOGO / TITLE */}
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-semibold text-white tracking-tight">
@@ -51,7 +65,6 @@ export default function LoginPage() {
 
         {/* FORM */}
         <form onSubmit={handleSubmit} className="space-y-4">
-
           <div className="space-y-1">
             <label className="text-xs text-white/50">
               Correo electrónico
@@ -97,11 +110,22 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* FOOTER */}
         <p className="text-center text-xs text-white/30">
           Plataforma interna de nutrición
         </p>
       </div>
+
+      {/* OVERLAY TRANSICIÓN */}
+      {leaving && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B0B0B]">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-10 w-10 rounded-full border-2 border-white/10 border-t-[var(--color-accent)] animate-spin" />
+            <p className="text-sm text-white/60">
+              Accediendo al panel…
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
