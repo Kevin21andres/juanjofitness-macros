@@ -13,16 +13,16 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
     setLoading(true);
     setError(null);
 
-    const { error, data } =
+    const { error } =
       await supabaseBrowser.auth.signInWithPassword({
         email,
         password,
       });
-
-    console.log("LOGIN RESULT:", { error, data });
 
     setLoading(false);
 
@@ -35,45 +35,72 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0B0B0B]">
-      <div className="w-full max-w-sm bg-[#111111] p-8 rounded-2xl border border-white/10">
-        <h1 className="text-2xl font-semibold text-white mb-2">
-          Acceso privado
-        </h1>
-        <p className="text-sm text-white/70 mb-6">
-          Herramienta interna Juanjo Fitness
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0B0B0B] via-[#0E1622] to-[#0B0B0B] px-4">
 
+      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#111]/80 backdrop-blur-xl shadow-xl p-8 space-y-6">
+
+        {/* LOGO / TITLE */}
+        <div className="space-y-2 text-center">
+          <h1 className="text-3xl font-semibold text-white tracking-tight">
+            Juanjo<span className="text-[var(--color-accent)]">Fitness</span>
+          </h1>
+          <p className="text-sm text-white/60">
+            Acceso privado · Panel nutricional
+          </p>
+        </div>
+
+        {/* FORM */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="juanjo@email.com"
-            required
-            className="w-full bg-[#0B0B0B] border border-white/10 rounded-lg px-3 py-2 text-white"
-          />
 
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            className="w-full bg-[#0B0B0B] border border-white/10 rounded-lg px-3 py-2 text-white"
-          />
+          <div className="space-y-1">
+            <label className="text-xs text-white/50">
+              Correo electrónico
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="juanjo@email.com"
+              required
+              className="w-full rounded-lg bg-[#0B0B0B] border border-white/10 px-3 py-2 text-white placeholder:text-white/30
+                         focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs text-white/50">
+              Contraseña
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="w-full rounded-lg bg-[#0B0B0B] border border-white/10 px-3 py-2 text-white placeholder:text-white/30
+                         focus:outline-none focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent)]"
+            />
+          </div>
 
           {error && (
-            <p className="text-red-400 text-sm">{error}</p>
+            <p className="text-sm text-red-400">
+              {error}
+            </p>
           )}
 
           <button
             disabled={loading}
-            className="w-full bg-[var(--color-accent)] py-2 rounded-lg"
+            className="w-full mt-2 rounded-lg bg-[var(--color-accent)] py-2.5 font-medium text-white
+                       transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Entrando..." : "Entrar"}
+            {loading ? "Entrando…" : "Entrar"}
           </button>
         </form>
+
+        {/* FOOTER */}
+        <p className="text-center text-xs text-white/30">
+          Plataforma interna de nutrición
+        </p>
       </div>
     </div>
   );
