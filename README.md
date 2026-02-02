@@ -1,5 +1,21 @@
 # 🥗 JuanjoFitness Macros
 
+## 🚦 Estado del proyecto
+
+**JuanjoFitness Macros v1.0**  
+La aplicación ha alcanzado su **primera versión estable**, con todas las funcionalidades base implementadas y operativas en entorno de producción.
+
+Incluye:
+- Gestión completa de clientes
+- Creación y edición de dietas
+- Cálculo automático de macronutrientes
+- Generación de PDFs profesionales
+- Compartición segura de dietas mediante enlace
+- Interfaz responsive y coherente
+
+A partir de esta versión, el desarrollo se centra en **mejoras incrementales y nuevas funcionalidades**.
+
+
 Aplicación web para **gestión nutricional profesional**, orientada a entrenadores y nutricionistas.  
 Permite crear clientes, diseñar dietas por comidas, calcular macronutrientes, generar PDFs profesionales y compartir dietas mediante enlaces públicos seguros.
 
