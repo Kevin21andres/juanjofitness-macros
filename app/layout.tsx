@@ -1,6 +1,11 @@
 import { Raleway } from "next/font/google";
 import "./globals.css";
 
+export const metadata = {
+  title: "JJHP",
+  description: "Gestión de clientes, dietas y rutinas",
+};
+
 const raleway = Raleway({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
