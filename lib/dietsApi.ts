@@ -11,7 +11,7 @@ export type Diet = {
   meals_count: number;
   is_active: boolean;
   created_at: string;
-  notes: string | null; // 🔥 NUEVO
+  notes: string | null;
 };
 
 export type Food = {
@@ -56,7 +56,7 @@ export type SharedDiet = {
   name: string;
   meals: DietMeal[];
   totals: DietTotals;
-  notes: string | null; // 🔥 NUEVO
+  notes: string | null;
 };
 
 /* =========================
@@ -91,7 +91,7 @@ export async function createDietVersion(params: {
   clientId: string;
   name: string;
   mealsCount: number;
-  notes?: string | null; // 🔥 NUEVO
+  notes?: string | null;
 }) {
   await supabase
     .from("diets")
@@ -106,7 +106,7 @@ export async function createDietVersion(params: {
       name: params.name,
       meals_count: params.mealsCount,
       is_active: true,
-      notes: params.notes ?? null, // 🔥 NUEVO
+      notes: params.notes ?? null,
     })
     .select()
     .single();
@@ -209,7 +209,7 @@ export async function getDietDetail(
     meals_count: data.meals_count,
     is_active: data.is_active,
     created_at: data.created_at,
-    notes: data.notes ?? null, // 🔥 NUEVO
+    notes: data.notes ?? null,
     meals,
     totals: {
       kcal: Math.round(totals.kcal),
@@ -284,7 +284,7 @@ export async function getSharedDietByToken(
     diet: {
       id: diet.id,
       name: diet.name,
-      notes: diet.notes ?? null, // 🔥 NUEVO
+      notes: diet.notes ?? null,
       meals,
       totals: {
         kcal: Math.round(totals.kcal),
@@ -293,5 +293,39 @@ export async function getSharedDietByToken(
         fat: Number(totals.fat.toFixed(1)),
       },
     },
+  };
+}
+
+/* =========================
+   CLONAR DIETA (PARA EDITAR)
+   👉 COMPATIBLE CON DietPlanner
+========================= */
+
+export async function getDietCloneData(
+  dietId: string
+): Promise<{
+  name: string;
+  notes: string | null;
+  meals: {
+    meal_index: number;
+    items: {
+      food_id: string;
+      grams: number;
+    }[];
+  }[];
+} | null> {
+  const diet = await getDietDetail(dietId);
+  if (!diet) return null;
+
+  return {
+    name: diet.name,
+    notes: diet.notes,
+    meals: diet.meals.map((meal) => ({
+      meal_index: meal.meal_index,
+      items: meal.items.map((item) => ({
+        food_id: item.food.id,
+        grams: item.grams,
+      })),
+    })),
   };
 }

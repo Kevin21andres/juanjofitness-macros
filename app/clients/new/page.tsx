@@ -30,13 +30,18 @@ export default function NewClientPage() {
     }));
   };
 
+  /* =========================
+     VALIDACIÓN
+  ========================= */
   const isFormValid =
     form.name.trim() &&
     form.surname.trim() &&
-    form.email.trim() &&
     form.phone.trim() &&
     PHONE_REGEX.test(form.phone.trim());
 
+  /* =========================
+     SUBMIT
+  ========================= */
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -45,7 +50,7 @@ export default function NewClientPage() {
 
     if (!isFormValid) {
       setError(
-        "Nombre, apellidos, email y teléfono válidos son obligatorios"
+        "Nombre, apellidos y teléfono válido son obligatorios"
       );
       return;
     }
@@ -55,7 +60,9 @@ export default function NewClientPage() {
     try {
       await createClient({
         name: `${form.name.trim()} ${form.surname.trim()}`,
-        email: form.email.trim().toLowerCase(),
+        email: form.email.trim()
+          ? form.email.trim().toLowerCase()
+          : null,
         phone: form.phone.trim(),
         notes: form.notes.trim() || null,
       });
@@ -135,7 +142,7 @@ export default function NewClientPage() {
 
             <div>
               <label className="text-xs text-white/50">
-                Correo electrónico *
+                Correo electrónico (opcional)
               </label>
               <input
                 name="email"
@@ -147,7 +154,7 @@ export default function NewClientPage() {
                            focus:ring-1 focus:ring-[var(--color-accent)]"
               />
               <p className="text-xs text-white/40 mt-1">
-                Se usará para enviar la dieta por email
+                Solo necesario si quieres enviar la dieta por email
               </p>
             </div>
 

@@ -7,6 +7,10 @@ import { createDietVersion } from "@/lib/dietsApi";
 import { createMeal } from "@/lib/dietMealsApi";
 import { createDietItem } from "@/lib/dietItemsApi";
 
+/* =========================
+   TIPOS
+========================= */
+
 type Totals = {
   kcal: number;
   protein: number;
@@ -14,30 +18,49 @@ type Totals = {
   fat: number;
 };
 
+export type CloneDietData = {
+  name: string;
+  notes: string | null;
+  meals: {
+    meal_index: number;
+    items: {
+      food_id: string;
+      grams: number;
+    }[];
+  }[];
+};
+
 type Props = {
   clientId: string;
   clientName: string;
   onSaved?: (dietId: string) => void;
+  initialDiet?: CloneDietData | null;
 };
+
+/* =========================
+   UTILIDAD
+========================= */
 
 function generateDietName(clientName: string) {
   const today = new Date().toISOString().slice(0, 10);
   return `${clientName} - ${today}`;
 }
 
+/* =========================
+   COMPONENTE
+========================= */
+
 export default function DietPlanner({
   clientId,
   clientName,
   onSaved,
+  initialDiet = null,
 }: Props) {
   const [mealsCount, setMealsCount] = useState(5);
-  const [mealsItems, setMealsItems] =
-    useState<Record<number, Item[]>>({});
+  const [mealsItems, setMealsItems] = useState<Record<number, Item[]>>({});
   const [foods, setFoods] = useState<Food[]>([]);
   const [loadingFoods, setLoadingFoods] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  // 📝 NUEVO
   const [notes, setNotes] = useState("");
 
   /* =============================
@@ -55,18 +78,37 @@ export default function DietPlanner({
         }
       } catch (e) {
         console.error(e);
-        if (mounted) {
-          setLoadingFoods(false);
-        }
+        if (mounted) setLoadingFoods(false);
       }
     };
 
     load();
-
     return () => {
       mounted = false;
     };
   }, []);
+
+  /* =============================
+     🔁 PRECARGAR DIETA (CLON)
+  ============================== */
+  useEffect(() => {
+    if (!initialDiet) return;
+
+    setMealsCount(initialDiet.meals.length);
+    setNotes(initialDiet.notes ?? "");
+
+    const initialMeals: Record<number, Item[]> = {};
+
+    initialDiet.meals.forEach((meal) => {
+      initialMeals[meal.meal_index] = meal.items.map((item) => ({
+        id: crypto.randomUUID(), // necesario para React
+        foodId: item.food_id,
+        grams: item.grams,
+      }));
+    });
+
+    setMealsItems(initialMeals);
+  }, [initialDiet]);
 
   /* =============================
      CALLBACK COMIDAS
@@ -82,7 +124,7 @@ export default function DietPlanner({
   );
 
   /* =============================
-     TOTAL DIARIO (MEMO)
+     TOTAL DIARIO
   ============================== */
   const totalDay: Totals = useMemo(() => {
     return Object.values(mealsItems).reduce(
@@ -90,9 +132,7 @@ export default function DietPlanner({
         items.forEach((item) => {
           if (item.grams <= 0) return;
 
-          const food = foods.find(
-            (f) => f.id === item.foodId
-          );
+          const food = foods.find((f) => f.id === item.foodId);
           if (!food) return;
 
           const factor = item.grams / 100;
@@ -108,14 +148,15 @@ export default function DietPlanner({
   }, [mealsItems, foods]);
 
   /* =============================
-     GUARDAR DIETA
+     GUARDAR DIETA (VERSIONADA)
   ============================== */
   const saveDiet = async () => {
     if (!clientId || saving) return;
 
-    const hasAnyFood = Object.values(mealsItems).some(
-      (items) => items.some((i) => i.grams > 0)
+    const hasAnyFood = Object.values(mealsItems).some((items) =>
+      items.some((i) => i.grams > 0)
     );
+
     if (!hasAnyFood) {
       alert("Añade al menos un alimento antes de guardar la dieta");
       return;
@@ -128,7 +169,7 @@ export default function DietPlanner({
         clientId,
         name: generateDietName(clientName),
         mealsCount,
-        notes: notes.trim() || null, // 📝 NUEVO
+        notes: notes.trim() || null,
       });
 
       for (let i = 0; i < mealsCount; i++) {
@@ -137,11 +178,7 @@ export default function DietPlanner({
 
         for (const item of items) {
           if (item.grams <= 0) continue;
-          await createDietItem(
-            meal.id,
-            item.foodId,
-            item.grams
-          );
+          await createDietItem(meal.id, item.foodId, item.grams);
         }
       }
 
@@ -154,9 +191,12 @@ export default function DietPlanner({
     }
   };
 
+  /* =============================
+     UI
+  ============================== */
+
   return (
     <div className="space-y-6">
-
       {/* Nº comidas */}
       <section className="card">
         <label className="text-sm text-white/70">
@@ -167,8 +207,16 @@ export default function DietPlanner({
           className="input mt-2"
           value={mealsCount}
           onChange={(e) => {
-            setMealsCount(Number(e.target.value));
-            setMealsItems({});
+            const newCount = Number(e.target.value);
+            setMealsCount(newCount);
+
+            setMealsItems((prev) => {
+              const updated: Record<number, Item[]> = {};
+              for (let i = 0; i < newCount; i++) {
+                updated[i] = prev[i] ?? [];
+              }
+              return updated;
+            });
           }}
         >
           {[3, 4, 5, 6, 7, 8].map((n) => (
@@ -194,7 +242,7 @@ export default function DietPlanner({
         />
       </section>
 
-      {/* Comidas */}
+      {/* COMIDAS */}
       {!loadingFoods && (
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {Array.from({ length: mealsCount }).map((_, i) => (
@@ -202,19 +250,16 @@ export default function DietPlanner({
               key={i}
               title={`Comida ${i + 1}`}
               foods={foods}
-              onChange={(items) =>
-                handleMealChange(i, items)
-              }
+              initialItems={mealsItems[i] ?? []} // ✅ AHORA SÍ
+              onChange={(items) => handleMealChange(i, items)}
             />
           ))}
         </section>
       )}
 
-      {/* Total */}
+      {/* TOTAL */}
       <section className="card">
-        <h3 className="text-white font-medium mb-3">
-          Total diario
-        </h3>
+        <h3 className="text-white font-medium mb-3">Total diario</h3>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
           <p>🔥 {totalDay.kcal.toFixed(0)} kcal</p>
@@ -224,7 +269,7 @@ export default function DietPlanner({
         </div>
       </section>
 
-      {/* Guardar */}
+      {/* GUARDAR */}
       <button
         type="button"
         onClick={saveDiet}

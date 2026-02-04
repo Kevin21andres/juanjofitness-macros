@@ -5,7 +5,7 @@ import {
   View,
   StyleSheet,
 } from "@react-pdf/renderer";
-import { DietDetail } from "@/lib/dietsApi";
+import { SharedDiet } from "@/lib/dietsApi";
 
 /* =========================
    COLORES CORPORATIVOS
@@ -13,6 +13,9 @@ import { DietDetail } from "@/lib/dietsApi";
 const COLORS = {
   accent: "#1E90FF",
   accentDark: "#1E3A8A",
+  protein: "#22C55E",
+  carbs: "#F59E0B",
+  fat: "#EF4444",
   text: "#020617",
   muted: "#475569",
   background: "#F8FAFC",
@@ -32,7 +35,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
 
-  /* ---------- HERO ---------- */
   hero: {
     backgroundColor: COLORS.accent,
     padding: 24,
@@ -41,7 +43,7 @@ const styles = StyleSheet.create({
   },
 
   heroTitle: {
-    fontSize: 26,
+    fontSize: 20,
     fontFamily: "Helvetica-Bold",
     color: "#FFFFFF",
     marginBottom: 4,
@@ -56,10 +58,9 @@ const styles = StyleSheet.create({
   heroMeta: {
     fontSize: 10,
     color: "#DBEAFE",
-    marginTop: 6,
+    marginTop: 4,
   },
 
-  /* ---------- SECCIONES ---------- */
   sectionTitle: {
     fontSize: 16,
     fontFamily: "Helvetica-Bold",
@@ -69,39 +70,38 @@ const styles = StyleSheet.create({
 
   card: {
     backgroundColor: COLORS.card,
-    padding: 14,
+    padding: 16,
     borderRadius: 10,
-    marginBottom: 14,
+    marginBottom: 16,
     border: `1 solid ${COLORS.border}`,
   },
 
-  /* ---------- RESUMEN ---------- */
-  macroGrid: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  macroBox: {
-    width: "48%",
-    padding: 10,
-    borderRadius: 8,
-    border: `1 solid ${COLORS.border}`,
-    marginBottom: 8,
+  macroLine: {
+    fontSize: 11,
+    marginBottom: 6,
   },
 
   macroLabel: {
-    fontSize: 10,
     color: COLORS.muted,
-    marginBottom: 2,
   },
 
   macroValue: {
-    fontSize: 13,
     fontFamily: "Helvetica-Bold",
-    color: COLORS.accent,
   },
 
-  /* ---------- COMIDAS ---------- */
+  barContainer: {
+    height: 8,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 4,
+    marginTop: 4,
+    marginBottom: 10,
+  },
+
+  barFill: {
+    height: "100%",
+    borderRadius: 4,
+  },
+
   mealTitle: {
     fontSize: 14,
     fontFamily: "Helvetica-Bold",
@@ -124,12 +124,15 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
   },
 
-  /* ---------- NOTAS ---------- */
+  emptyMeal: {
+    fontSize: 10,
+    color: COLORS.muted,
+    fontStyle: "italic",
+  },
+
   notesText: {
     fontSize: 11,
-    color: COLORS.text,
     lineHeight: 1.5,
-    whiteSpace: "pre-wrap",
   },
 
   footer: {
@@ -144,55 +147,66 @@ const styles = StyleSheet.create({
    PROPS
 ========================= */
 type Props = {
-  diet: DietDetail;
+  diet: SharedDiet;
   clientName: string;
 };
 
 /* =========================
-   PDF
+   BARRA DE MACRO (PDF SAFE)
+========================= */
+function MacroBar({
+  label,
+  value,
+  color,
+  total,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  total: number;
+}) {
+  const percent = total > 0 ? Math.round((value / total) * 100) : 0;
+
+  return (
+    <View>
+      <Text style={styles.macroLine}>
+        <Text style={styles.macroLabel}>{label}: </Text>
+        <Text style={[styles.macroValue, { color }]}>
+          {value} g ({percent}%)
+        </Text>
+      </Text>
+
+      <View style={styles.barContainer}>
+        <View
+          style={[
+            styles.barFill,
+            {
+              width: `${percent}%`,
+              backgroundColor: color,
+            },
+          ]}
+        />
+      </View>
+    </View>
+  );
+}
+
+/* =========================
+   PDF CANÓNICO
 ========================= */
 export default function DietPdf({ diet, clientName }: Props) {
-  /* =========================
-     🔢 TOTALES
-  ========================= */
-  const totals = diet.meals.reduce(
-    (acc, meal) => {
-      meal.items.forEach((item) => {
-        const factor = item.grams / 100;
-        acc.kcal += item.food.kcal_100 * factor;
-        acc.protein += item.food.protein_100 * factor;
-        acc.carbs += item.food.carbs_100 * factor;
-        acc.fat += item.food.fat_100 * factor;
-      });
-      return acc;
-    },
-    { kcal: 0, protein: 0, carbs: 0, fat: 0 }
-  );
+  const totalMacros =
+    diet.totals.protein +
+    diet.totals.carbs +
+    diet.totals.fat;
 
   return (
     <Document>
-      {/* ======================
-          PORTADA + RESUMEN
-      ====================== */}
       <Page style={styles.page}>
         {/* HERO */}
         <View style={styles.hero}>
-          <Text style={styles.heroTitle}>
-            Plan Nutricional
-          </Text>
-
-          <Text style={styles.heroSubtitle}>
-            {clientName}
-          </Text>
-
-          <Text style={styles.heroMeta}>
-            Dieta: {diet.name}
-          </Text>
-
-          <Text style={styles.heroMeta}>
-            Fecha:{" "}
-            {new Date(diet.created_at).toLocaleDateString()}
-          </Text>
+          <Text style={styles.heroTitle}>Plan Nutricional</Text>
+          <Text style={styles.heroMeta}>Dieta: {diet.name}</Text>
         </View>
 
         {/* RESUMEN */}
@@ -201,45 +215,33 @@ export default function DietPdf({ diet, clientName }: Props) {
         </Text>
 
         <View style={styles.card}>
-          <View style={styles.macroGrid}>
-            <View style={styles.macroBox}>
-              <Text style={styles.macroLabel}>
-                Energía
-              </Text>
-              <Text style={styles.macroValue}>
-                {totals.kcal.toFixed(0)} kcal
-              </Text>
-            </View>
+          <Text style={styles.macroLine}>
+            <Text style={styles.macroLabel}>Energía: </Text>
+            <Text style={styles.macroValue}>
+              {diet.totals.kcal} kcal
+            </Text>
+          </Text>
 
-            <View style={styles.macroBox}>
-              <Text style={styles.macroLabel}>
-                Proteína
-              </Text>
-              <Text style={styles.macroValue}>
-                {totals.protein.toFixed(1)} g
-              </Text>
-            </View>
-          </View>
+          <MacroBar
+            label="Proteína"
+            value={diet.totals.protein}
+            color={COLORS.protein}
+            total={totalMacros}
+          />
 
-          <View style={styles.macroGrid}>
-            <View style={styles.macroBox}>
-              <Text style={styles.macroLabel}>
-                Carbohidratos
-              </Text>
-              <Text style={styles.macroValue}>
-                {totals.carbs.toFixed(1)} g
-              </Text>
-            </View>
+          <MacroBar
+            label="Carbohidratos"
+            value={diet.totals.carbs}
+            color={COLORS.carbs}
+            total={totalMacros}
+          />
 
-            <View style={styles.macroBox}>
-              <Text style={styles.macroLabel}>
-                Grasas
-              </Text>
-              <Text style={styles.macroValue}>
-                {totals.fat.toFixed(1)} g
-              </Text>
-            </View>
-          </View>
+          <MacroBar
+            label="Grasas"
+            value={diet.totals.fat}
+            color={COLORS.fat}
+            total={totalMacros}
+          />
         </View>
 
         {/* NOTAS */}
@@ -250,22 +252,12 @@ export default function DietPdf({ diet, clientName }: Props) {
             </Text>
 
             <View style={styles.card}>
-              <Text style={styles.notesText}>
-                {diet.notes}
-              </Text>
+              <Text style={styles.notesText}>{diet.notes}</Text>
             </View>
           </>
         )}
 
-        <Text style={styles.footer}>
-          Plan nutricional generado con JuanjoFitness
-        </Text>
-      </Page>
-
-      {/* ======================
-          COMIDAS
-      ====================== */}
-      <Page style={styles.page}>
+        {/* COMIDAS */}
         <Text style={styles.sectionTitle}>
           Distribución de comidas
         </Text>
@@ -278,18 +270,28 @@ export default function DietPdf({ diet, clientName }: Props) {
                 Comida {meal.meal_index + 1}
               </Text>
 
-              {meal.items.map((item) => (
-                <View key={item.id} style={styles.foodRow}>
-                  <Text style={styles.foodName}>
-                    {item.food.name}
-                  </Text>
-                  <Text style={styles.grams}>
-                    {item.grams} g
-                  </Text>
-                </View>
-              ))}
+              {meal.items.length === 0 ? (
+                <Text style={styles.emptyMeal}>
+                  Sin alimentos asignados
+                </Text>
+              ) : (
+                meal.items.map((item) => (
+                  <View key={item.id} style={styles.foodRow}>
+                    <Text style={styles.foodName}>
+                      {item.food.name}
+                    </Text>
+                    <Text style={styles.grams}>
+                      {item.grams} g
+                    </Text>
+                  </View>
+                ))
+              )}
             </View>
           ))}
+
+        <Text style={styles.footer}>
+          Plan nutricional generado con JuanjoFitness
+        </Text>
       </Page>
     </Document>
   );

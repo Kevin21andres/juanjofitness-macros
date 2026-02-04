@@ -1,7 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Food } from "@/lib/foodsApi";
+
+/* =========================
+   TIPOS
+========================= */
 
 export type Item = {
   id: string;
@@ -13,14 +17,27 @@ type Props = {
   title: string;
   foods: Food[];
   onChange: (items: Item[]) => void;
+  initialItems?: Item[]; // ✅ NUEVO
 };
+
+/* =========================
+   COMPONENTE
+========================= */
 
 export default function FoodCalculator({
   title,
   foods,
   onChange,
+  initialItems = [],
 }: Props) {
-  const [items, setItems] = useState<Item[]>([]);
+  const [items, setItems] = useState<Item[]>(initialItems);
+
+  /* =========================
+     🔁 SINCRONIZAR CLON
+  ========================= */
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
   const notify = (nextItems: Item[]) => {
     setItems(nextItems);

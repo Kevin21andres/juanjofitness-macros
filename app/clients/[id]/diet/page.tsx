@@ -123,12 +123,21 @@ export default function ClientDietPage({
               </p>
             </div>
 
-            <Link
-              href={`/clients/${clientId}/diet/${activeDiet.id}`}
-              className="text-sm text-[var(--color-accent)] hover:underline"
-            >
-              Ver dieta →
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href={`/clients/${clientId}/diet/${activeDiet.id}`}
+                className="text-sm text-[var(--color-accent)] hover:underline"
+              >
+                Ver →
+              </Link>
+
+              <Link
+                href={`/calculator?clientId=${clientId}&cloneDietId=${activeDiet.id}`}
+                className="text-sm text-white/70 hover:text-[var(--color-accent)] transition"
+              >
+                Duplicar
+              </Link>
+            </div>
           </div>
         ) : (
           <p className="text-sm text-white/60">
@@ -166,12 +175,21 @@ export default function ClientDietPage({
                   </p>
                 </div>
 
-                <Link
-                  href={`/clients/${clientId}/diet/${diet.id}`}
-                  className="text-xs text-[var(--color-accent)] hover:underline"
-                >
-                  Ver →
-                </Link>
+                <div className="flex items-center gap-4">
+                  <Link
+                    href={`/clients/${clientId}/diet/${diet.id}`}
+                    className="text-xs text-[var(--color-accent)] hover:underline"
+                  >
+                    Ver
+                  </Link>
+
+                  <Link
+                    href={`/calculator?clientId=${clientId}&cloneDietId=${diet.id}`}
+                    className="text-xs text-white/60 hover:text-[var(--color-accent)] transition"
+                  >
+                    Duplicar
+                  </Link>
+                </div>
               </li>
             ))}
           </ul>

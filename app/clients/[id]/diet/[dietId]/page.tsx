@@ -17,6 +17,7 @@ export default function DietDetailPage({
 }: {
   params: Promise<{ id: string; dietId: string }>;
 }) {
+  // ✅ NEXT 15 — params es Promise en Client
   const { id: clientId, dietId } = use(params);
 
   const [diet, setDiet] = useState<DietDetail | null>(null);
@@ -25,23 +26,33 @@ export default function DietDetailPage({
   useEffect(() => {
     if (!dietId) return;
 
+    setLoading(true);
+
     getDietDetail(dietId)
       .then(setDiet)
       .finally(() => setLoading(false));
   }, [dietId]);
 
   if (loading) {
-    return <p className="text-white p-6">Cargando dieta…</p>;
+    return (
+      <p className="text-white p-6">
+        Cargando dieta…
+      </p>
+    );
   }
 
   if (!diet) {
-    return <p className="text-white p-6">Dieta no encontrada</p>;
+    return (
+      <p className="text-white p-6">
+        Dieta no encontrada
+      </p>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B0B] via-[#0E1622] to-[#0B0B0B] px-6 py-10 space-y-10">
 
-      {/* HEADER / HERO */}
+      {/* HEADER */}
       <header className="space-y-2">
         <Link
           href={`/clients/${clientId}`}
@@ -55,13 +66,13 @@ export default function DietDetailPage({
         </h1>
 
         <p className="text-sm text-white/50">
-          Creada el {new Date(diet.created_at).toLocaleDateString()}
+          Creada el{" "}
+          {new Date(diet.created_at).toLocaleDateString()}
         </p>
       </header>
 
-      {/* RESUMEN GLOBAL */}
+      {/* RESUMEN */}
       <section className="rounded-2xl border border-white/10 bg-[#111]/70 backdrop-blur-xl shadow-xl p-6 space-y-6">
-
         <h2 className="text-white font-medium text-lg">
           📊 Resumen diario
         </h2>
@@ -85,8 +96,8 @@ export default function DietDetailPage({
         </div>
       </section>
 
-      {/* 📝 NOTAS */}
-      {diet.notes && diet.notes.trim().length > 0 && (
+      {/* NOTAS */}
+      {diet.notes?.trim() && (
         <section className="rounded-2xl border border-white/10 bg-[#111]/70 backdrop-blur-xl shadow-xl p-6 space-y-2">
           <h3 className="text-white font-medium text-lg">
             📝 Notas y recomendaciones
@@ -98,7 +109,7 @@ export default function DietDetailPage({
         </section>
       )}
 
-      {/* 🍽️ COMIDAS */}
+      {/* COMIDAS */}
       <section className="space-y-4">
         <h2 className="text-white font-medium text-lg">
           🍽️ Distribución por comidas

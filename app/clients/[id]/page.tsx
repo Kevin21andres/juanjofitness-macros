@@ -3,6 +3,7 @@
 import { use } from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getClient, Client } from "@/lib/clientsApi";
 import {
   getActiveDiet,
@@ -16,6 +17,7 @@ type Props = {
 
 export default function ClientPage({ params }: Props) {
   const { id: clientId } = use(params);
+  const router = useRouter();
 
   const [client, setClient] = useState<Client | null>(null);
   const [activeDiet, setActiveDiet] = useState<Diet | null>(null);
@@ -129,38 +131,68 @@ export default function ClientPage({ params }: Props) {
         </h2>
 
         {activeDiet ? (
-          <div className="flex justify-between items-center gap-4">
-            <div>
-              <p className="text-white font-medium">
-                {activeDiet.name}
-              </p>
-              <p className="text-xs text-white/40">
-                Creada el{" "}
-                {new Date(activeDiet.created_at).toLocaleDateString()}
-              </p>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center gap-4">
+              <div>
+                <p className="text-white font-medium">
+                  {activeDiet.name}
+                </p>
+                <p className="text-xs text-white/40">
+                  Creada el{" "}
+                  {new Date(activeDiet.created_at).toLocaleDateString()}
+                </p>
+              </div>
+
+              <Link
+                href={`/clients/${clientId}/diet/${activeDiet.id}`}
+                className="text-sm text-[var(--color-accent)] hover:underline"
+              >
+                Ver dieta →
+              </Link>
             </div>
 
-            <Link
-              href={`/clients/${clientId}/diet/${activeDiet.id}`}
-              className="text-sm text-[var(--color-accent)] hover:underline"
-            >
-              Ver dieta →
-            </Link>
+            {/* ACCIONES DIETA */}
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href={`/calculator?clientId=${clientId}`}
+                className="inline-flex items-center justify-center rounded-lg
+                           bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white
+                           transition hover:brightness-110"
+              >
+                Nueva dieta
+              </Link>
+
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    `/calculator?clientId=${clientId}&cloneDietId=${activeDiet.id}`
+                  )
+                }
+                className="inline-flex items-center justify-center rounded-lg
+                           border border-white/20 px-4 py-2 text-sm text-white/80
+                           hover:bg-white/10 transition"
+              >
+                🔁 Duplicar dieta
+              </button>
+            </div>
           </div>
         ) : (
-          <p className="text-sm text-white/50">
-            Este cliente no tiene una dieta activa.
-          </p>
-        )}
+          <div className="space-y-3">
+            <p className="text-sm text-white/50">
+              Este cliente no tiene una dieta activa.
+            </p>
 
-        <Link
-          href={`/calculator?clientId=${clientId}`}
-          className="inline-flex items-center justify-center mt-2 rounded-lg
-                     bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white
-                     transition hover:brightness-110"
-        >
-          {activeDiet ? "Cambiar dieta" : "Crear dieta"}
-        </Link>
+            <Link
+              href={`/calculator?clientId=${clientId}`}
+              className="inline-flex items-center justify-center rounded-lg
+                         bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-white
+                         transition hover:brightness-110"
+            >
+              Crear dieta
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* HISTÓRICO */}

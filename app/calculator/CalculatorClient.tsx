@@ -3,17 +3,28 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+
 import DietPlanner from "@/app/components/DietPlanner";
 import SaveDietModal from "@/app/components/SaveDietModal";
+
 import {
   getClientsWithCurrentDiet,
   ClientWithDiet,
 } from "@/lib/clientsApi";
-import { getDietDetail, DietDetail } from "@/lib/dietsApi";
+
+import {
+  getDietDetail,
+  getDietCloneData,
+  DietDetail,
+} from "@/lib/dietsApi";
+
+import type { CloneDietData } from "@/app/components/DietPlanner";
 
 export default function CalculatorClient() {
   const searchParams = useSearchParams();
+
   const clientIdFromUrl = searchParams.get("clientId");
+  const cloneDietId = searchParams.get("cloneDietId");
 
   const [clients, setClients] = useState<ClientWithDiet[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
@@ -22,6 +33,9 @@ export default function CalculatorClient() {
   const [selectedClient, setSelectedClient] =
     useState<ClientWithDiet | null>(null);
   const [query, setQuery] = useState("");
+
+  const [initialDiet, setInitialDiet] =
+    useState<CloneDietData | null>(null);
 
   const [savedDietId, setSavedDietId] = useState<string | null>(null);
   const [savedDiet, setSavedDiet] = useState<DietDetail | null>(null);
@@ -61,11 +75,34 @@ export default function CalculatorClient() {
     };
 
     load();
-
     return () => {
       mounted = false;
     };
   }, [clientIdFromUrl]);
+
+  /* =========================
+     🔁 CARGAR DIETA A CLONAR
+  ========================= */
+  useEffect(() => {
+    if (!cloneDietId) return;
+
+    let mounted = true;
+    setLoadingDiet(true);
+
+    getDietCloneData(cloneDietId)
+      .then((clone) => {
+        if (mounted && clone) {
+          setInitialDiet(clone);
+        }
+      })
+      .finally(() => {
+        if (mounted) setLoadingDiet(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [cloneDietId]);
 
   /* =========================
      CARGAR DIETA TRAS GUARDAR
@@ -104,7 +141,7 @@ export default function CalculatorClient() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B0B] via-[#0E1622] to-[#0B0B0B] px-6 py-10 space-y-10">
 
-      {/* HEADER / HERO */}
+      {/* HEADER */}
       <header className="flex justify-between items-center">
         <div className="space-y-1">
           <h1 className="text-3xl font-semibold text-white tracking-tight">
@@ -123,9 +160,8 @@ export default function CalculatorClient() {
         </Link>
       </header>
 
-      {/* SELECCIÓN DE CLIENTE */}
+      {/* SELECCIÓN CLIENTE */}
       <section className="rounded-2xl border border-white/10 bg-[#111]/70 backdrop-blur-xl shadow-xl p-6 space-y-4 max-w-2xl">
-
         <h2 className="text-white font-medium text-lg">
           👤 Seleccionar cliente
         </h2>
@@ -140,6 +176,7 @@ export default function CalculatorClient() {
             setSelectedClient(null);
             setSavedDiet(null);
             setSavedDietId(null);
+            setInitialDiet(null);
           }}
           disabled={loadingClients}
         />
@@ -174,8 +211,7 @@ export default function CalculatorClient() {
                     selectedClient?.id === client.id
                       ? "bg-[var(--color-accent)] text-white"
                       : "text-white/80 hover:bg-white/5"
-                  }
-                `}
+                  }`}
               >
                 {client.name}
               </button>
@@ -196,6 +232,7 @@ export default function CalculatorClient() {
         <DietPlanner
           clientId={selectedClient.id}
           clientName={selectedClient.name}
+          initialDiet={initialDiet}
           onSaved={(dietId) => setSavedDietId(dietId)}
         />
       )}
@@ -219,7 +256,7 @@ export default function CalculatorClient() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
           <div className="rounded-xl border border-white/10 bg-[#111]/80 px-6 py-4 shadow-xl">
             <p className="text-sm text-white">
-              ⏳ Preparando resumen de la dieta…
+              ⏳ Preparando dieta…
             </p>
           </div>
         </div>

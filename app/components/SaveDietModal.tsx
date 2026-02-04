@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { DietDetail } from "@/lib/dietsApi";
 import { useRouter } from "next/navigation";
-import { generateDietPdf } from "@/lib/pdf/generateDietPdf";
 import {
   createDietShare,
   shareDietByWhatsApp,
@@ -32,22 +31,35 @@ export default function SaveDietModal({
   const [error, setError] = useState<string | null>(null);
 
   /* =========================
-     DESCARGA PDF LOCAL
+     📄 PDF (SERVER CANÓNICO)
   ========================= */
   const handlePdf = async () => {
     if (generatingPdf) return;
 
     try {
+      setError(null);
       setGeneratingPdf(true);
-      await new Promise((r) => setTimeout(r, 300));
-      generateDietPdf(diet, clientName);
+
+      const { token } = await createDietShare({
+        dietId: diet.id,
+        channel: "email",
+        sentTo: clientName,
+      });
+
+      window.open(
+        `/api/diets/shared/${token}/pdf`,
+        "_blank"
+      );
+    } catch (e) {
+      console.error(e);
+      setError("Error generando el PDF");
     } finally {
       setGeneratingPdf(false);
     }
   };
 
   /* =========================
-     WHATSAPP (TOKEN)
+     📲 WHATSAPP
   ========================= */
   const handleWhatsapp = async () => {
     if (!clientPhone) {
@@ -79,7 +91,7 @@ export default function SaveDietModal({
   };
 
   /* =========================
-     EMAIL (TOKEN)
+     📧 EMAIL
   ========================= */
   const handleEmail = async () => {
     if (!clientEmail) {
@@ -114,92 +126,52 @@ export default function SaveDietModal({
      UI
   ========================= */
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="bg-[#111] rounded-2xl p-6 w-full max-w-md space-y-5 shadow-xl border border-white/10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="bg-[#111] rounded-2xl p-6 w-full max-w-md space-y-5 border border-white/10">
 
-        {/* HEADER */}
         <h2 className="text-xl font-semibold text-white">
           ✅ Dieta guardada correctamente
         </h2>
 
         <p className="text-sm text-white/70">
-          La dieta se ha guardado para<br />
-          <span className="text-white font-medium">{clientName}</span>
+          {clientName}
         </p>
 
-        {/* ACTIONS */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-
-          {/* PDF */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
             onClick={handlePdf}
             disabled={generatingPdf}
-            className={`
-              border border-white/20 rounded-lg py-2 text-sm text-white
-              transition
-              ${generatingPdf ? "opacity-50 cursor-not-allowed" : "hover:bg-white/5"}
-            `}
           >
-            {generatingPdf ? "⏳ Generando…" : "📄 Descargar PDF"}
+            {generatingPdf ? "⏳ PDF…" : "📄 PDF"}
           </button>
 
-          {/* EMAIL */}
           <button
             onClick={handleEmail}
             disabled={!clientEmail || sharingEmail}
-            className={`
-              border border-white/20 rounded-lg py-2 text-sm text-white
-              transition
-              ${
-                !clientEmail || sharingEmail
-                  ? "opacity-40 cursor-not-allowed"
-                  : "hover:bg-white/5"
-              }
-            `}
           >
-            {sharingEmail ? "⏳ Enviando…" : "📧 Email"}
+            {sharingEmail ? "⏳ Email…" : "📧 Email"}
           </button>
 
-          {/* WHATSAPP */}
           <button
             onClick={handleWhatsapp}
             disabled={!clientPhone || sharingWhatsapp}
-            className={`
-              border border-white/20 rounded-lg py-2 text-sm text-white
-              transition
-              ${
-                !clientPhone || sharingWhatsapp
-                  ? "opacity-40 cursor-not-allowed"
-                  : "hover:bg-white/5"
-              }
-            `}
           >
-            {sharingWhatsapp ? "⏳ Enviando…" : "📲 WhatsApp"}
+            {sharingWhatsapp ? "⏳ WhatsApp…" : "📲 WhatsApp"}
           </button>
-
         </div>
 
-        {/* ERROR */}
         {error && (
-          <p className="text-sm text-red-400 pt-1">{error}</p>
+          <p className="text-sm text-red-400">{error}</p>
         )}
 
-        {/* FOOTER */}
-        <div className="flex justify-end pt-3 border-t border-white/10">
-          <button
-            onClick={() => {
-              onClose();
-            router.push('/clients');}}
-            
-            className="text-sm text-white/60 hover:text-white transition"
-          >
-            Cerrar
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            onClose();
+            router.push("/clients");
+          }}
+        >
+          Cerrar
+        </button>
       </div>
     </div>
   );
