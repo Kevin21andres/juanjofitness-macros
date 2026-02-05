@@ -15,6 +15,7 @@ export default function MacroDonut({
   const safeCarbs = Math.max(0, carbs);
   const safeFat = Math.max(0, fat);
 
+  
   const total = safeProtein + safeCarbs + safeFat;
   if (total === 0) return null;
 
