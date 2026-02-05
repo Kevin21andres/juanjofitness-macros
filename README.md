@@ -245,4 +245,4 @@ npm run dev
 
 La app estará disponible en:
 
-http://localhost:3000
+http://localhost:3000# nutrition-platform
