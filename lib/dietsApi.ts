@@ -4,6 +4,7 @@ import { supabase } from "./supabaseClient";
    TIPOS BASE (MODELO REAL)
 ========================= */
 
+
 export type Diet = {
   id: string;
   client_id: string | null;

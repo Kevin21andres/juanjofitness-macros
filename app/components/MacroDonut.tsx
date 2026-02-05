@@ -1,72 +1,143 @@
-function MacroDonutPdf({
-  protein,
-  carbs,
-  fat,
-}: {
+type Props = {
   protein: number;
   carbs: number;
   fat: number;
-}) {
-  const total = protein + carbs + fat || 1;
+  kcal: number;
+};
 
-  const r = 38;
-  const c = 2 * Math.PI * r;
+export default function MacroDonut({
+  protein,
+  carbs,
+  fat,
+  kcal,
+}: Props) {
+  const safeProtein = Math.max(0, protein);
+  const safeCarbs = Math.max(0, carbs);
+  const safeFat = Math.max(0, fat);
 
-  const pProtein = protein / total;
-  const pCarbs = carbs / total;
-  const pFat = fat / total;
+  const total = safeProtein + safeCarbs + safeFat;
+  if (total === 0) return null;
 
-  const degProtein = pProtein * 360;
-  const degCarbs = pCarbs * 360;
-  const degFat = pFat * 360;
+  /* =========================
+     DIMENSIONES
+  ========================= */
+  const radius = 62;
+  const stroke = 16;
+  const size = 180;
+  const center = size / 2;
+
+  const circumference = 2 * Math.PI * radius;
+
+  /* =========================
+     PORCENTAJES
+  ========================= */
+  const proteinPct = safeProtein / total;
+  const carbsPct = safeCarbs / total;
+  const fatPct = safeFat / total;
+
+  const proteinLen = circumference * proteinPct;
+  const carbsLen = circumference * carbsPct;
+  const fatLen = circumference * fatPct;
 
   return (
-    <Svg width={100} height={100} viewBox="0 0 100 100">
-      {/* Base */}
-      <Circle
-        cx="50"
-        cy="50"
-        r={r}
-        stroke="#E5E7EB"
-        strokeWidth={10}
-        fill="none"
-      />
+    <div className="flex flex-col items-center gap-4">
+      <svg width={size} height={size}>
+        {/* Fondo */}
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke="rgba(255,255,255,0.1)"
+          strokeWidth={stroke}
+          fill="none"
+        />
 
-      {/* Proteína */}
-      <Circle
-        cx="50"
-        cy="50"
-        r={r}
-        stroke={COLORS.protein}
-        strokeWidth={10}
-        fill="none"
-        strokeDasharray={`${pProtein * c} ${c}`}
-        transform="rotate(-90 50 50)"
-      />
+        {/* PROTEÍNA */}
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke="#EF4444"
+          strokeWidth={stroke}
+          fill="none"
+          strokeDasharray={`${proteinLen} ${circumference}`}
+          strokeDashoffset={0}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${center} ${center})`}
+        />
 
-      {/* Carbohidratos */}
-      <Circle
-        cx="50"
-        cy="50"
-        r={r}
-        stroke={COLORS.carbs}
-        strokeWidth={10}
-        fill="none"
-        strokeDasharray={`${pCarbs * c} ${c}`}
-        transform={`rotate(${degProtein - 90} 50 50)`}
-      />
+        {/* CARBS */}
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke="#F59E0B"
+          strokeWidth={stroke}
+          fill="none"
+          strokeDasharray={`${carbsLen} ${circumference}`}
+          strokeDashoffset={-proteinLen}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${center} ${center})`}
+        />
 
-      {/* Grasas */}
-      <Circle
-        cx="50"
-        cy="50"
-        r={r}
-        stroke={COLORS.fat}
-        strokeWidth={10}
-        fill="none"
-        strokeDasharray={`${pFat * c} ${c}`}
-        transform={`rotate(${degProtein + degCarbs - 90} 50 50)`}
-      />
-    </Svg>
+        {/* GRASAS */}
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke="#10B981"
+          strokeWidth={stroke}
+          fill="none"
+          strokeDasharray={`${fatLen} ${circumference}`}
+          strokeDashoffset={-(proteinLen + carbsLen)}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${center} ${center})`}
+        />
+
+        {/* TEXTO CENTRAL */}
+        <text
+          x="50%"
+          y="50%"
+          textAnchor="middle"
+          dy="-6"
+          className="fill-white text-xl font-semibold"
+        >
+          {Math.round(kcal)}
+        </text>
+        <text
+          x="50%"
+          y="50%"
+          textAnchor="middle"
+          dy="14"
+          className="fill-white/50 text-xs"
+        >
+          kcal totales
+        </text>
+      </svg>
+
+      {/* LEYENDA */}
+      <div className="grid grid-cols-3 gap-6 text-xs text-white/80">
+        <div className="flex flex-col items-center">
+          <span className="text-red-400 font-medium">
+            Proteína
+          </span>
+          <span>{safeProtein.toFixed(0)} g</span>
+        </div>
+
+        <div className="flex flex-col items-center">
+          <span className="text-amber-400 font-medium">
+            Carbs
+          </span>
+          <span>{safeCarbs.toFixed(0)} g</span>
+        </div>
+
+        <div className="flex flex-col items-center">
+          <span className="text-emerald-400 font-medium">
+            Grasas
+          </span>
+          <span>{safeFat.toFixed(0)} g</span>
+        </div>
+      </div>
+    </div>
   );
 }
