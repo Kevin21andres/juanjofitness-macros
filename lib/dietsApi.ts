@@ -298,7 +298,6 @@ export async function getSharedDietByToken(
 
 /* =========================
    CLONAR DIETA (PARA EDITAR)
-   👉 COMPATIBLE CON DietPlanner
 ========================= */
 
 export async function getDietCloneData(

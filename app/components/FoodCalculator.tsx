@@ -17,7 +17,7 @@ type Props = {
   title: string;
   foods: Food[];
   onChange: (items: Item[]) => void;
-  initialItems?: Item[]; // ✅ NUEVO
+  initialItems?: Item[];
 };
 
 /* =========================
@@ -33,7 +33,7 @@ export default function FoodCalculator({
   const [items, setItems] = useState<Item[]>(initialItems);
 
   /* =========================
-     🔁 SINCRONIZAR CLON
+      SINCRONIZAR CLON
   ========================= */
   useEffect(() => {
     setItems(initialItems);

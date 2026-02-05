@@ -12,7 +12,7 @@ export default function LoginPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [leaving, setLeaving] = useState(false); // 👈 transición
+  const [leaving, setLeaving] = useState(false); 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +33,6 @@ export default function LoginPage() {
       return;
     }
 
-    // ✨ animación de salida
     setLeaving(true);
 
     setTimeout(() => {

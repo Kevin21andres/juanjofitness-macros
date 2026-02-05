@@ -17,7 +17,6 @@ export default function DietDetailPage({
 }: {
   params: Promise<{ id: string; dietId: string }>;
 }) {
-  // ✅ NEXT 15 — params es Promise en Client
   const { id: clientId, dietId } = use(params);
 
   const [diet, setDiet] = useState<DietDetail | null>(null);

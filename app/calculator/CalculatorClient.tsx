@@ -81,7 +81,7 @@ export default function CalculatorClient() {
   }, [clientIdFromUrl]);
 
   /* =========================
-     🔁 CARGAR DIETA A CLONAR
+     CARGAR DIETA A CLONAR
   ========================= */
   useEffect(() => {
     if (!cloneDietId) return;

@@ -89,7 +89,7 @@ export default function DietPlanner({
   }, []);
 
   /* =============================
-     🔁 PRECARGAR DIETA (CLON)
+     PRECARGAR DIETA (CLON)
   ============================== */
   useEffect(() => {
     if (!initialDiet) return;
@@ -227,7 +227,7 @@ export default function DietPlanner({
         </select>
       </section>
 
-      {/* 📝 NOTAS */}
+      {/* NOTAS */}
       <section className="card">
         <label className="text-sm text-white/70">
           Notas y recomendaciones

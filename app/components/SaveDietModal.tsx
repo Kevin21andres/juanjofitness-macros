@@ -31,7 +31,7 @@ export default function SaveDietModal({
   const [error, setError] = useState<string | null>(null);
 
   /* =========================
-     📄 PDF (SERVER CANÓNICO)
+    PDF (SERVER CANÓNICO)
   ========================= */
   const handlePdf = async () => {
     if (generatingPdf) return;
@@ -59,7 +59,7 @@ export default function SaveDietModal({
   };
 
   /* =========================
-     📲 WHATSAPP
+    WHATSAPP
   ========================= */
   const handleWhatsapp = async () => {
     if (!clientPhone) {
@@ -91,7 +91,7 @@ export default function SaveDietModal({
   };
 
   /* =========================
-     📧 EMAIL
+    EMAIL
   ========================= */
   const handleEmail = async () => {
     if (!clientEmail) {

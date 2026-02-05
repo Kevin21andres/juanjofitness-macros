@@ -59,7 +59,6 @@ export async function createDietShare({
 }: CreateDietShareParams) {
   const now = new Date().toISOString();
 
-  // 1️⃣ Intentar reutilizar share activo
   const { data: existing, error: selectError } = await supabase
     .from("diet_shares")
     .select("token")
@@ -79,7 +78,6 @@ export async function createDietShare({
     return { token: existing.token };
   }
 
-  // 2️⃣ Crear nuevo share
   const token =
     typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID()
@@ -127,16 +125,15 @@ export async function shareDietByWhatsApp({
 
   const message = `
 Hola ${clientName}
-Te dejo tu plan nutricional actualizado.
+Te dejo tu plan nutricional.
  ${url}
-Cualquier duda me dices 🙂
+Cualquier duda me dices
   `.trim();
 
   const phone = clientPhone.replace(/\s+/g, "");
   const encodedMessage = encodeURIComponent(message);
   const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
 
-  // ✅ CLAVE: MISMA PESTAÑA (móvil friendly)
   window.location.href = whatsappUrl;
 }
 
@@ -156,13 +153,13 @@ export async function shareDietByEmail({
   const url = getDietShareUrl(shareToken);
 
   const subject = encodeURIComponent(
-    "Tu plan nutricional personalizado"
+    "Tu plan nutricional"
   );
 
   const body = encodeURIComponent(`
 Hola ${clientName},
 
-Te envío tu plan nutricional actualizado.
+Te envío tu plan nutricional.
 
 Puedes consultarlo aquí:
 ${url}

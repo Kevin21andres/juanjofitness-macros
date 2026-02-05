@@ -6,7 +6,6 @@ export default async function SharedDietPage({
 }: {
   params: Promise<{ token: string }>;
 }) {
-  // ✅ OBLIGATORIO EN NEXT 15
   const { token } = await params;
 
   const sharedDiet = await getSharedDietByToken(token);
