@@ -1,3 +1,4 @@
+// app/clients/[id]/diet/[dietId]/page.tsx
 "use client";
 
 import { use, useEffect, useState } from "react";

@@ -1,3 +1,4 @@
+// lib/dietMealsApi.ts
 import { supabase } from "./supabaseClient";
 
 export type DietMeal = {

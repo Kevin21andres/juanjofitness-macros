@@ -1,3 +1,4 @@
+// app/components/DietPlanner.tsx
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";

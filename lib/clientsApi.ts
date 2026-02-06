@@ -1,3 +1,4 @@
+// lib/clientsApi.ts
 import { supabase } from "./supabaseClient";
 
 /* =========================

@@ -1,3 +1,4 @@
+// app/calculator/CalculatorClient.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";

@@ -1,3 +1,4 @@
+// app/api/diets/shared/[token]/pdf/route.ts
 import { getSharedDietByToken } from "@/lib/dietsApi";
 import { generateDietPdfServer } from "@/lib/pdf/generateDietPdf.server";
 

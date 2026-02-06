@@ -1,3 +1,4 @@
+// app/components/MacroDonut.tsx
 type Props = {
   protein: number;
   carbs: number;

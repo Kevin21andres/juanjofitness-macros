@@ -1,3 +1,4 @@
+// app/calculator/page.tsx
 import { Suspense } from "react";
 import CalculatorClient from "./CalculatorClient";
 

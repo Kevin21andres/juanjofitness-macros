@@ -1,3 +1,4 @@
+// app/clients/[id]/page.tsx
 "use client";
 
 import { use } from "react";

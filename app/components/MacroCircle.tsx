@@ -1,3 +1,4 @@
+// app/components/MacroCircle.tsx
 type Props = {
   label: string;
   grams: number;

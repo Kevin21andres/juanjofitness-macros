@@ -1,3 +1,4 @@
+// lib/foodsApi.ts
 import { supabase } from "./supabaseClient";
 
 export type Food = {

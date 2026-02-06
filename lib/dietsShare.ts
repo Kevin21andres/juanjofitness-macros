@@ -1,3 +1,4 @@
+// lib/dietsShare.ts
 /* ========================= 
    COMPARTIR DIETAS (TOKEN)
 ========================= */

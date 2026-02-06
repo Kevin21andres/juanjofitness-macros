@@ -1,3 +1,4 @@
+// app/share/diet/[token]/page.tsx
 import { notFound } from "next/navigation";
 import { getSharedDietByToken } from "@/lib/dietsApi";
 

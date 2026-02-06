@@ -1,3 +1,4 @@
+// lib/dashboardApi.ts
 import { supabase } from "./supabaseClient";
 
 type DashboardStats = {
