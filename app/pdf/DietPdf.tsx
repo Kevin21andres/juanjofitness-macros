@@ -49,12 +49,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
 
-  heroSubtitle: {
-    fontSize: 14,
-    fontFamily: "Helvetica-Bold",
-    color: "#E0F2FE",
-  },
-
   heroMeta: {
     fontSize: 10,
     color: "#DBEAFE",
@@ -117,11 +111,24 @@ const styles = StyleSheet.create({
   },
 
   foodName: {
-    maxWidth: "75%",
+    maxWidth: "70%",
   },
 
   grams: {
     color: COLORS.muted,
+  },
+
+  substituteRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 3,
+    paddingLeft: 12,
+  },
+
+  substituteLabel: {
+    fontSize: 9,
+    color: COLORS.muted,
+    fontStyle: "italic",
   },
 
   emptyMeal: {
@@ -148,11 +155,10 @@ const styles = StyleSheet.create({
 ========================= */
 type Props = {
   diet: SharedDiet;
-  clientName: string;
 };
 
 /* =========================
-   BARRA DE MACRO (PDF SAFE)
+   BARRA DE MACRO
 ========================= */
 function MacroBar({
   label,
@@ -192,9 +198,9 @@ function MacroBar({
 }
 
 /* =========================
-   PDF CANÓNICO
+   PDF CANÓNICO (MODELO NUEVO)
 ========================= */
-export default function DietPdf({ diet, clientName }: Props) {
+export default function DietPdf({ diet }: Props) {
   const totalMacros =
     diet.totals.protein +
     diet.totals.carbs +
@@ -205,8 +211,12 @@ export default function DietPdf({ diet, clientName }: Props) {
       <Page style={styles.page}>
         {/* HERO */}
         <View style={styles.hero}>
-          <Text style={styles.heroTitle}>Plan Nutricional</Text>
-          <Text style={styles.heroMeta}>Dieta: {diet.name}</Text>
+          <Text style={styles.heroTitle}>
+            Plan Nutricional
+          </Text>
+          <Text style={styles.heroMeta}>
+            Dieta: {diet.name}
+          </Text>
         </View>
 
         {/* RESUMEN */}
@@ -216,7 +226,9 @@ export default function DietPdf({ diet, clientName }: Props) {
 
         <View style={styles.card}>
           <Text style={styles.macroLine}>
-            <Text style={styles.macroLabel}>Energía: </Text>
+            <Text style={styles.macroLabel}>
+              Energía:{" "}
+            </Text>
             <Text style={styles.macroValue}>
               {diet.totals.kcal} kcal
             </Text>
@@ -228,14 +240,12 @@ export default function DietPdf({ diet, clientName }: Props) {
             color={COLORS.protein}
             total={totalMacros}
           />
-
           <MacroBar
             label="Carbohidratos"
             value={diet.totals.carbs}
             color={COLORS.carbs}
             total={totalMacros}
           />
-
           <MacroBar
             label="Grasas"
             value={diet.totals.fat}
@@ -250,9 +260,10 @@ export default function DietPdf({ diet, clientName }: Props) {
             <Text style={styles.sectionTitle}>
               Notas y recomendaciones
             </Text>
-
             <View style={styles.card}>
-              <Text style={styles.notesText}>{diet.notes}</Text>
+              <Text style={styles.notesText}>
+                {diet.notes}
+              </Text>
             </View>
           </>
         )}
@@ -264,30 +275,74 @@ export default function DietPdf({ diet, clientName }: Props) {
 
         {diet.meals
           .sort((a, b) => a.meal_index - b.meal_index)
-          .map((meal) => (
-            <View key={meal.id} style={styles.card}>
-              <Text style={styles.mealTitle}>
-                Comida {meal.meal_index + 1}
-              </Text>
+          .map((meal) => {
+            const mainItems = meal.items.filter(
+              (i) => i.role === "main"
+            );
+            const substitutes = meal.items.filter(
+              (i) => i.role === "substitute"
+            );
 
-              {meal.items.length === 0 ? (
-                <Text style={styles.emptyMeal}>
-                  Sin alimentos asignados
+            return (
+              <View key={meal.id} style={styles.card}>
+                <Text style={styles.mealTitle}>
+                  Comida {meal.meal_index + 1}
                 </Text>
-              ) : (
-                meal.items.map((item) => (
-                  <View key={item.id} style={styles.foodRow}>
-                    <Text style={styles.foodName}>
-                      {item.food.name}
-                    </Text>
-                    <Text style={styles.grams}>
-                      {item.grams} g
-                    </Text>
-                  </View>
-                ))
-              )}
-            </View>
-          ))}
+
+                {mainItems.length === 0 ? (
+                  <Text style={styles.emptyMeal}>
+                    Sin alimentos asignados
+                  </Text>
+                ) : (
+                  mainItems.map((item) => {
+                    const subs = substitutes.filter(
+                      (s) =>
+                        s.parent_item_id === item.id
+                    );
+
+                    return (
+                      <View key={item.id}>
+                        {/* Principal */}
+                        <View style={styles.foodRow}>
+                          <Text style={styles.foodName}>
+                            {item.food.name}
+                          </Text>
+                          <Text style={styles.grams}>
+                            {item.grams} g
+                          </Text>
+                        </View>
+
+                        {/* Sustituciones */}
+                        {subs.map((sub) => (
+                          <View
+                            key={sub.id}
+                            style={styles.substituteRow}
+                          >
+                            <Text
+                              style={[
+                                styles.foodName,
+                                styles.substituteLabel,
+                              ]}
+                            >
+                              - {sub.food.name}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.grams,
+                                styles.substituteLabel,
+                              ]}
+                            >
+                              {sub.grams} g
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    );
+                  })
+                )}
+              </View>
+            );
+          })}
 
         <Text style={styles.footer}>
           Plan nutricional generado con JuanjoFitness

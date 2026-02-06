@@ -26,31 +26,21 @@ export default function DietDetailPage({
     if (!dietId) return;
 
     setLoading(true);
-
     getDietDetail(dietId)
       .then(setDiet)
       .finally(() => setLoading(false));
   }, [dietId]);
 
   if (loading) {
-    return (
-      <p className="text-white p-6">
-        Cargando dieta…
-      </p>
-    );
+    return <p className="text-white p-6">Cargando dieta…</p>;
   }
 
   if (!diet) {
-    return (
-      <p className="text-white p-6">
-        Dieta no encontrada
-      </p>
-    );
+    return <p className="text-white p-6">Dieta no encontrada</p>;
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B0B] via-[#0E1622] to-[#0B0B0B] px-6 py-10 space-y-10">
-
       {/* HEADER */}
       <header className="space-y-2">
         <Link
@@ -118,15 +108,20 @@ export default function DietDetailPage({
           {diet.meals
             .sort((a, b) => a.meal_index - b.meal_index)
             .map((meal) => {
-              const mealTotals: Totals = meal.items.reduce(
+              const mainItems = meal.items.filter(
+                (i) => i.role === "main"
+              );
+              const substitutes = meal.items.filter(
+                (i) => i.role === "substitute"
+              );
+
+              const mealTotals: Totals = mainItems.reduce(
                 (acc, item) => {
                   const factor = item.grams / 100;
-                  const f = item.food;
-
-                  acc.kcal += f.kcal_100 * factor;
-                  acc.protein += f.protein_100 * factor;
-                  acc.carbs += f.carbs_100 * factor;
-                  acc.fat += f.fat_100 * factor;
+                  acc.kcal += item.food.kcal_100 * factor;
+                  acc.protein += item.food.protein_100 * factor;
+                  acc.carbs += item.food.carbs_100 * factor;
+                  acc.fat += item.food.fat_100 * factor;
                   return acc;
                 },
                 { kcal: 0, protein: 0, carbs: 0, fat: 0 }
@@ -141,20 +136,53 @@ export default function DietDetailPage({
                     🍽️ Comida {meal.meal_index + 1}
                   </h3>
 
-                  <ul className="text-sm text-white/80 space-y-1">
-                    {meal.items.map((item) => (
-                      <li
-                        key={item.id}
-                        className="flex justify-between gap-3"
-                      >
-                        <span>{item.food.name}</span>
-                        <span className="text-white/50">
-                          {item.grams} g
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                  {mainItems.length === 0 ? (
+                    <p className="text-sm text-white/40 italic">
+                      Sin alimentos asignados
+                    </p>
+                  ) : (
+                    <ul className="space-y-2 text-sm text-white/80">
+                      {mainItems.map((item) => {
+                        const subs = substitutes.filter(
+                          (s) =>
+                            s.parent_item_id === item.id
+                        );
 
+                        return (
+                          <li key={item.id}>
+                            {/* Principal */}
+                            <div className="flex justify-between">
+                              <span>{item.food.name}</span>
+                              <span className="text-white/50">
+                                {item.grams} g
+                              </span>
+                            </div>
+
+                            {/* Sustituciones */}
+                            {subs.length > 0 && (
+                              <ul className="mt-1 ml-4 space-y-1 text-xs text-white/60 italic">
+                                {subs.map((sub) => (
+                                  <li
+                                    key={sub.id}
+                                    className="flex justify-between"
+                                  >
+                                    <span>
+                                      ↳ {sub.food.name}
+                                    </span>
+                                    <span>
+                                      {sub.grams} g
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+
+                  {/* TOTALES COMIDA */}
                   <div className="grid grid-cols-2 gap-2 text-xs text-white/60 pt-2 border-t border-white/10">
                     <p>🔥 {mealTotals.kcal.toFixed(0)} kcal</p>
                     <p>🥩 {mealTotals.protein.toFixed(1)} g</p>

@@ -62,38 +62,73 @@ export default async function SharedDietPage({
         <section className="space-y-6">
           {diet.meals
             .sort((a, b) => a.meal_index - b.meal_index)
-            .map((meal) => (
-              <div
-                key={meal.id}
-                className="rounded-2xl border border-white/10 bg-[#111]/80 backdrop-blur-xl shadow-lg p-6 space-y-4"
-              >
-                <h2 className="text-sm font-medium flex items-center gap-2 text-[var(--color-accent)]">
-                  🍽️ Comida {meal.meal_index + 1}
-                </h2>
+            .map((meal) => {
+              const mainItems = meal.items.filter(
+                (i) => i.role === "main"
+              );
+              const substitutes = meal.items.filter(
+                (i) => i.role === "substitute"
+              );
 
-                <ul className="divide-y divide-white/10 text-sm">
-                  {meal.items.length === 0 ? (
-                    <li className="py-2 text-white/40 italic">
+              return (
+                <div
+                  key={meal.id}
+                  className="rounded-2xl border border-white/10 bg-[#111]/80 backdrop-blur-xl shadow-lg p-6 space-y-4"
+                >
+                  <h2 className="text-sm font-medium flex items-center gap-2 text-[var(--color-accent)]">
+                    🍽️ Comida {meal.meal_index + 1}
+                  </h2>
+
+                  {mainItems.length === 0 ? (
+                    <p className="text-white/40 italic">
                       Sin alimentos asignados
-                    </li>
+                    </p>
                   ) : (
-                    meal.items.map((item) => (
-                      <li
-                        key={item.id}
-                        className="flex justify-between items-center py-2"
-                      >
-                        <span className="text-white/90">
-                          {item.food.name}
-                        </span>
-                        <span className="text-white/50 text-xs">
-                          {item.grams} g
-                        </span>
-                      </li>
-                    ))
+                    <ul className="space-y-2 text-sm">
+                      {mainItems.map((item) => {
+                        const subs = substitutes.filter(
+                          (s) =>
+                            s.parent_item_id === item.id
+                        );
+
+                        return (
+                          <li key={item.id}>
+                            {/* Principal */}
+                            <div className="flex justify-between items-center py-2 border-b border-white/10">
+                              <span className="text-white/90">
+                                {item.food.name}
+                              </span>
+                              <span className="text-white/50 text-xs">
+                                {item.grams} g
+                              </span>
+                            </div>
+
+                            {/* Sustituciones */}
+                            {subs.length > 0 && (
+                              <ul className="mt-1 ml-4 space-y-1">
+                                {subs.map((sub) => (
+                                  <li
+                                    key={sub.id}
+                                    className="flex justify-between items-center text-xs text-white/60 italic"
+                                  >
+                                    <span>
+                                      ↳ {sub.food.name}
+                                    </span>
+                                    <span>
+                                      {sub.grams} g
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
                   )}
-                </ul>
-              </div>
-            ))}
+                </div>
+              );
+            })}
         </section>
 
         {/* FOOTER */}
@@ -108,7 +143,9 @@ export default async function SharedDietPage({
   );
 }
 
-/* STAT */
+/* =========================
+   STAT
+========================= */
 function Stat({
   label,
   value,

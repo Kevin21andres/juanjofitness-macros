@@ -35,24 +35,27 @@ export type ClientWithDiet = Client & {
 
 /* =========================
    UTILIDAD: CALCULAR TOTALES
+   → SOLO ITEMS PRINCIPALES
 ========================= */
 
-function calculateDietTotals(dietDays: any[]): DietTotals {
-  return dietDays.reduce(
-    (acc: DietTotals, day: any) => {
-      day.meals?.forEach((meal: any) => {
-        meal.meal_foods?.forEach((item: any) => {
-          const food = item.foods;
-          if (!food) return;
+function calculateDietTotals(diet: any): DietTotals {
+  return (
+    diet.diet_meals ?? []
+  ).reduce(
+    (acc: DietTotals, meal: any) => {
+      meal.diet_items?.forEach((item: any) => {
+        if (item.role !== "main") return;
+        if (!item.foods || item.grams <= 0) return;
 
-          const factor = item.grams / 100;
+        const food = item.foods;
+        const factor = item.grams / 100;
 
-          acc.kcal += food.kcal_100 * factor;
-          acc.protein += food.protein_100 * factor;
-          acc.carbs += food.carbs_100 * factor;
-          acc.fat += food.fat_100 * factor;
-        });
+        acc.kcal += food.kcal_100 * factor;
+        acc.protein += food.protein_100 * factor;
+        acc.carbs += food.carbs_100 * factor;
+        acc.fat += food.fat_100 * factor;
       });
+
       return acc;
     },
     { kcal: 0, protein: 0, carbs: 0, fat: 0 }
@@ -94,16 +97,15 @@ export async function getClientsWithCurrentDiet(): Promise<ClientWithDiet[]> {
         name,
         created_at,
         is_active,
-        diet_days (
-          meals (
-            meal_foods (
-              grams,
-              foods (
-                kcal_100,
-                protein_100,
-                carbs_100,
-                fat_100
-              )
+        diet_meals (
+          diet_items (
+            grams,
+            role,
+            foods (
+              kcal_100,
+              protein_100,
+              carbs_100,
+              fat_100
             )
           )
         )
@@ -124,7 +126,7 @@ export async function getClientsWithCurrentDiet(): Promise<ClientWithDiet[]> {
       };
     }
 
-    const totals = calculateDietTotals(activeDiet.diet_days ?? []);
+    const totals = calculateDietTotals(activeDiet);
 
     return {
       ...client,
@@ -210,12 +212,10 @@ export async function updateClient(
 ========================= */
 
 export async function deleteClient(id: string) {
-  const { data, error, count } = await supabase
+  const { error, count } = await supabase
     .from("clients")
     .delete({ count: "exact" })
     .eq("id", id);
-
-  console.log("DELETE CLIENT RESULT:", { data, count, error });
 
   if (error) throw error;
 

@@ -16,11 +16,8 @@ export async function GET(
     return new Response("No encontrada", { status: 404 });
   }
 
-  // Generación del PDF en servidor con el único motor de PDF
-  const pdfBuffer = await generateDietPdfServer(
-    shared.diet,
-    "Cliente"
-  );
+  // Generación del PDF en servidor (modelo único: SharedDiet)
+  const pdfBuffer = await generateDietPdfServer(shared.diet);
 
   // Respuesta binaria forzando descarga
   return new Response(pdfBuffer, {

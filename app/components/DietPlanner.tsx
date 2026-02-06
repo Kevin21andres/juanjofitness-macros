@@ -24,8 +24,11 @@ export type CloneDietData = {
   meals: {
     meal_index: number;
     items: {
+      id?: string;
       food_id: string;
       grams: number;
+      role: "main" | "substitute";
+      parent_item_id: string | null;
     }[];
   }[];
 };
@@ -69,20 +72,10 @@ export default function DietPlanner({
   useEffect(() => {
     let mounted = true;
 
-    const load = async () => {
-      try {
-        const data = await getFoods();
-        if (mounted) {
-          setFoods(data);
-          setLoadingFoods(false);
-        }
-      } catch (e) {
-        console.error(e);
-        if (mounted) setLoadingFoods(false);
-      }
-    };
+    getFoods()
+      .then((data) => mounted && setFoods(data))
+      .finally(() => mounted && setLoadingFoods(false));
 
-    load();
     return () => {
       mounted = false;
     };
@@ -90,6 +83,7 @@ export default function DietPlanner({
 
   /* =============================
      PRECARGAR DIETA (CLON)
+     ✅ FIX DEFINITIVO SUSTITUCIONES
   ============================== */
   useEffect(() => {
     if (!initialDiet) return;
@@ -100,10 +94,24 @@ export default function DietPlanner({
     const initialMeals: Record<number, Item[]> = {};
 
     initialDiet.meals.forEach((meal) => {
+      const idMap = new Map<string, string>();
+
+      // 1️⃣ mapear SOLO ids reales → nuevos ids
+      meal.items.forEach((item) => {
+        if (item.id) {
+          idMap.set(item.id, crypto.randomUUID());
+        }
+      });
+
+      // 2️⃣ reconstruir items manteniendo relaciones
       initialMeals[meal.meal_index] = meal.items.map((item) => ({
-        id: crypto.randomUUID(), // necesario para React
+        id: item.id ? idMap.get(item.id)! : crypto.randomUUID(),
         foodId: item.food_id,
         grams: item.grams,
+        role: item.role,
+        parentItemId: item.parent_item_id
+          ? idMap.get(item.parent_item_id)
+          : undefined,
       }));
     });
 
@@ -124,12 +132,13 @@ export default function DietPlanner({
   );
 
   /* =============================
-     TOTAL DIARIO
+     TOTAL DIARIO (solo principales)
   ============================== */
   const totalDay: Totals = useMemo(() => {
     return Object.values(mealsItems).reduce(
       (acc, items) => {
         items.forEach((item) => {
+          if (item.role === "substitute") return;
           if (item.grams <= 0) return;
 
           const food = foods.find((f) => f.id === item.foodId);
@@ -148,17 +157,19 @@ export default function DietPlanner({
   }, [mealsItems, foods]);
 
   /* =============================
-     GUARDAR DIETA (VERSIONADA)
+     GUARDAR DIETA
+     → principales primero
+     → sustituciones con FK real
   ============================== */
   const saveDiet = async () => {
     if (!clientId || saving) return;
 
-    const hasAnyFood = Object.values(mealsItems).some((items) =>
-      items.some((i) => i.grams > 0)
+    const hasAnyMainFood = Object.values(mealsItems).some((items) =>
+      items.some((i) => i.grams > 0 && i.role === "main")
     );
 
-    if (!hasAnyFood) {
-      alert("Añade al menos un alimento antes de guardar la dieta");
+    if (!hasAnyMainFood) {
+      alert("Añade al menos un alimento principal antes de guardar la dieta");
       return;
     }
 
@@ -174,11 +185,40 @@ export default function DietPlanner({
 
       for (let i = 0; i < mealsCount; i++) {
         const meal = await createMeal(diet.id, i);
-        const items = mealsItems[i] || [];
+        const items = mealsItems[i] ?? [];
 
-        for (const item of items) {
+        const mainIdMap = new Map<string, string>();
+
+        // 1️⃣ PRINCIPALES
+        for (const item of items.filter((i) => i.role === "main")) {
           if (item.grams <= 0) continue;
-          await createDietItem(meal.id, item.foodId, item.grams);
+
+          const created = await createDietItem(
+            meal.id,
+            item.foodId,
+            item.grams,
+            "main",
+            null
+          );
+
+          mainIdMap.set(item.id, created.id);
+        }
+
+        // 2️⃣ SUSTITUCIONES
+        for (const item of items.filter((i) => i.role === "substitute")) {
+          if (item.grams <= 0) continue;
+          if (!item.parentItemId) continue;
+
+          const parentDbId = mainIdMap.get(item.parentItemId);
+          if (!parentDbId) continue;
+
+          await createDietItem(
+            meal.id,
+            item.foodId,
+            item.grams,
+            "substitute",
+            parentDbId
+          );
         }
       }
 
@@ -197,7 +237,6 @@ export default function DietPlanner({
 
   return (
     <div className="space-y-6">
-      {/* Nº comidas */}
       <section className="card">
         <label className="text-sm text-white/70">
           Número de comidas diarias
@@ -207,15 +246,13 @@ export default function DietPlanner({
           className="input mt-2"
           value={mealsCount}
           onChange={(e) => {
-            const newCount = Number(e.target.value);
-            setMealsCount(newCount);
+            const n = Number(e.target.value);
+            setMealsCount(n);
 
             setMealsItems((prev) => {
-              const updated: Record<number, Item[]> = {};
-              for (let i = 0; i < newCount; i++) {
-                updated[i] = prev[i] ?? [];
-              }
-              return updated;
+              const next: Record<number, Item[]> = {};
+              for (let i = 0; i < n; i++) next[i] = prev[i] ?? [];
+              return next;
             });
           }}
         >
@@ -227,7 +264,6 @@ export default function DietPlanner({
         </select>
       </section>
 
-      {/* NOTAS */}
       <section className="card">
         <label className="text-sm text-white/70">
           Notas y recomendaciones
@@ -237,12 +273,10 @@ export default function DietPlanner({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={4}
-          placeholder="Ejemplo: beber 2–3L de agua, creatina diaria, ajustar sal según entreno…"
           className="input mt-2 resize-none"
         />
       </section>
 
-      {/* COMIDAS */}
       {!loadingFoods && (
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {Array.from({ length: mealsCount }).map((_, i) => (
@@ -250,17 +284,15 @@ export default function DietPlanner({
               key={i}
               title={`Comida ${i + 1}`}
               foods={foods}
-              initialItems={mealsItems[i] ?? []} // ✅ AHORA SÍ
+              initialItems={mealsItems[i] ?? []}
               onChange={(items) => handleMealChange(i, items)}
             />
           ))}
         </section>
       )}
 
-      {/* TOTAL */}
       <section className="card">
         <h3 className="text-white font-medium mb-3">Total diario</h3>
-
         <div className="grid grid-cols-2 gap-3 text-sm">
           <p>🔥 {totalDay.kcal.toFixed(0)} kcal</p>
           <p>🥩 {totalDay.protein.toFixed(1)} g</p>
@@ -269,7 +301,6 @@ export default function DietPlanner({
         </div>
       </section>
 
-      {/* GUARDAR */}
       <button
         type="button"
         onClick={saveDiet}

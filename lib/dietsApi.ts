@@ -4,7 +4,6 @@ import { supabase } from "./supabaseClient";
    TIPOS BASE (MODELO REAL)
 ========================= */
 
-
 export type Diet = {
   id: string;
   client_id: string | null;
@@ -27,6 +26,8 @@ export type Food = {
 export type DietItem = {
   id: string;
   grams: number;
+  role: "main" | "substitute";
+  parent_item_id: string | null;
   food: Food;
 };
 
@@ -62,6 +63,7 @@ export type SharedDiet = {
 
 /* =========================
    UTILIDAD: CALCULAR MACROS
+   → SOLO ITEMS PRINCIPALES
 ========================= */
 
 export function calculateDietTotals(
@@ -70,6 +72,8 @@ export function calculateDietTotals(
   return meals.reduce(
     (acc, meal) => {
       meal.items.forEach((item) => {
+        if (item.role === "substitute") return;
+
         const factor = item.grams / 100;
         const f = item.food;
 
@@ -175,6 +179,8 @@ export async function getDietDetail(
         diet_items (
           id,
           grams,
+          role,
+          parent_item_id,
           foods (
             id,
             name,
@@ -197,6 +203,8 @@ export async function getDietDetail(
     items: meal.diet_items.map((item: any) => ({
       id: item.id,
       grams: item.grams,
+      role: item.role,
+      parent_item_id: item.parent_item_id,
       food: item.foods,
     })),
   }));
@@ -204,13 +212,7 @@ export async function getDietDetail(
   const totals = calculateDietTotals(meals);
 
   return {
-    id: data.id,
-    client_id: data.client_id,
-    name: data.name,
-    meals_count: data.meals_count,
-    is_active: data.is_active,
-    created_at: data.created_at,
-    notes: data.notes ?? null,
+    ...data,
     meals,
     totals: {
       kcal: Math.round(totals.kcal),
@@ -244,6 +246,8 @@ export async function getSharedDietByToken(
           diet_items (
             id,
             grams,
+            role,
+            parent_item_id,
             foods (
               id,
               name,
@@ -261,10 +265,7 @@ export async function getSharedDietByToken(
     .maybeSingle();
 
   if (error || !data) return null;
-
-  if (data.expires_at && new Date(data.expires_at) < new Date()) {
-    return null;
-  }
+  if (data.expires_at && new Date(data.expires_at) < new Date()) return null;
 
   const diet = Array.isArray(data.diet) ? data.diet[0] : data.diet;
   if (!diet) return null;
@@ -275,6 +276,8 @@ export async function getSharedDietByToken(
     items: meal.diet_items.map((item: any) => ({
       id: item.id,
       grams: item.grams,
+      role: item.role,
+      parent_item_id: item.parent_item_id,
       food: item.foods,
     })),
   }));
@@ -298,7 +301,8 @@ export async function getSharedDietByToken(
 }
 
 /* =========================
-   CLONAR DIETA (PARA EDITAR)
+   CLONAR DIETA (FIX FINAL)
+   → INCLUYE ID DEL ITEM
 ========================= */
 
 export async function getDietCloneData(
@@ -309,8 +313,11 @@ export async function getDietCloneData(
   meals: {
     meal_index: number;
     items: {
+      id: string; // ✅ CLAVE
       food_id: string;
       grams: number;
+      role: "main" | "substitute";
+      parent_item_id: string | null;
     }[];
   }[];
 } | null> {
@@ -323,8 +330,11 @@ export async function getDietCloneData(
     meals: diet.meals.map((meal) => ({
       meal_index: meal.meal_index,
       items: meal.items.map((item) => ({
+        id: item.id,                 // ✅ imprescindible
         food_id: item.food.id,
         grams: item.grams,
+        role: item.role,
+        parent_item_id: item.parent_item_id,
       })),
     })),
   };
