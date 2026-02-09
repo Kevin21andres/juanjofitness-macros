@@ -1,4 +1,3 @@
-// app/clients/[id]/diet/[dietId]/page.tsx
 "use client";
 
 import { use, useEffect, useState } from "react";
@@ -131,12 +130,13 @@ export default function DietDetailPage({
               return (
                 <div
                   key={meal.id}
-                  className="rounded-2xl border border-white/10 bg-[#111]/70 backdrop-blur-xl shadow-xl p-5 space-y-3"
+                  className="rounded-2xl border border-white/10 bg-[#111]/70 backdrop-blur-xl shadow-xl p-5 space-y-4"
                 >
                   <h3 className="text-white font-medium">
                     🍽️ Comida {meal.meal_index + 1}
                   </h3>
 
+                  {/* ALIMENTOS */}
                   {mainItems.length === 0 ? (
                     <p className="text-sm text-white/40 italic">
                       Sin alimentos asignados
@@ -151,7 +151,6 @@ export default function DietDetailPage({
 
                         return (
                           <li key={item.id}>
-                            {/* Principal */}
                             <div className="flex justify-between">
                               <span>{item.food.name}</span>
                               <span className="text-white/50">
@@ -159,7 +158,6 @@ export default function DietDetailPage({
                               </span>
                             </div>
 
-                            {/* Sustituciones */}
                             {subs.length > 0 && (
                               <ul className="mt-1 ml-4 space-y-1 text-xs text-white/60 italic">
                                 {subs.map((sub) => (
@@ -183,8 +181,37 @@ export default function DietDetailPage({
                     </ul>
                   )}
 
-                  {/* TOTALES COMIDA */}
-                  <div className="grid grid-cols-2 gap-2 text-xs text-white/60 pt-2 border-t border-white/10">
+                  {/* SUPLEMENTOS */}
+                  {meal.supplements?.length > 0 && (
+                    <div className="pt-3 border-t border-white/10">
+                      <h4 className="text-xs text-white/60 mb-2">
+                        💊 Suplementos
+                      </h4>
+
+                      <ul className="space-y-1 text-xs text-white/70">
+                        {meal.supplements.map((s) => (
+                          <li
+                            key={s.id}
+                            className="flex justify-between"
+                          >
+                            <span>
+                              {s.name}
+                              {s.timing &&
+                                ` (${s.timing})`}
+                            </span>
+                            <span className="text-white/50">
+                              {s.amount != null &&
+                                `${s.amount} `}
+                              {s.unit}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* TOTALES */}
+                  <div className="grid grid-cols-2 gap-2 text-xs text-white/60 pt-3 border-t border-white/10">
                     <p>🔥 {mealTotals.kcal.toFixed(0)} kcal</p>
                     <p>🥩 {mealTotals.protein.toFixed(1)} g</p>
                     <p>🍚 {mealTotals.carbs.toFixed(1)} g</p>

@@ -3,10 +3,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import FoodCalculator, { Item } from "./FoodCalculator";
+
 import { getFoods, Food } from "@/lib/foodsApi";
 import { createDietVersion } from "@/lib/dietsApi";
 import { createMeal } from "@/lib/dietMealsApi";
 import { createDietItem } from "@/lib/dietItemsApi";
+import { createDietSupplement } from "@/lib/dietSupplementsApi";
+import type { SupplementItem } from "@/app/types/supplement";
 
 /* =========================
    TIPOS
@@ -30,6 +33,13 @@ export type CloneDietData = {
       grams: number;
       role: "main" | "substitute";
       parent_item_id: string | null;
+    }[];
+    supplements?: {
+      name: string;
+      amount: number | null;
+      unit: string | null;
+      timing: string | null;
+      notes: string | null;
     }[];
   }[];
 };
@@ -61,7 +71,13 @@ export default function DietPlanner({
   initialDiet = null,
 }: Props) {
   const [mealsCount, setMealsCount] = useState(5);
-  const [mealsItems, setMealsItems] = useState<Record<number, Item[]>>({});
+
+  const [mealsItems, setMealsItems] =
+    useState<Record<number, Item[]>>({});
+
+  const [mealsSupplements, setMealsSupplements] =
+    useState<Record<number, SupplementItem[]>>({});
+
   const [foods, setFoods] = useState<Food[]>([]);
   const [loadingFoods, setLoadingFoods] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -84,7 +100,6 @@ export default function DietPlanner({
 
   /* =============================
      PRECARGAR DIETA (CLON)
-     ✅ FIX DEFINITIVO SUSTITUCIONES
   ============================== */
   useEffect(() => {
     if (!initialDiet) return;
@@ -92,20 +107,17 @@ export default function DietPlanner({
     setMealsCount(initialDiet.meals.length);
     setNotes(initialDiet.notes ?? "");
 
-    const initialMeals: Record<number, Item[]> = {};
+    const items: Record<number, Item[]> = {};
+    const supplements: Record<number, SupplementItem[]> = {};
 
     initialDiet.meals.forEach((meal) => {
       const idMap = new Map<string, string>();
 
-      // 1️⃣ mapear SOLO ids reales → nuevos ids
       meal.items.forEach((item) => {
-        if (item.id) {
-          idMap.set(item.id, crypto.randomUUID());
-        }
+        if (item.id) idMap.set(item.id, crypto.randomUUID());
       });
 
-      // 2️⃣ reconstruir items manteniendo relaciones
-      initialMeals[meal.meal_index] = meal.items.map((item) => ({
+      items[meal.meal_index] = meal.items.map((item) => ({
         id: item.id ? idMap.get(item.id)! : crypto.randomUUID(),
         foodId: item.food_id,
         grams: item.grams,
@@ -114,26 +126,46 @@ export default function DietPlanner({
           ? idMap.get(item.parent_item_id)
           : undefined,
       }));
+
+      supplements[meal.meal_index] =
+        meal.supplements?.map((s) => ({
+          id: crypto.randomUUID(),
+          name: s.name,
+          amount: s.amount ?? undefined,
+          unit: s.unit ?? undefined,
+          timing: s.timing ?? undefined,
+          notes: s.notes ?? undefined,
+        })) ?? [];
     });
 
-    setMealsItems(initialMeals);
+    setMealsItems(items);
+    setMealsSupplements(supplements);
   }, [initialDiet]);
 
   /* =============================
-     CALLBACK COMIDAS
+     CALLBACK DESDE FoodCalculator
   ============================== */
   const handleMealChange = useCallback(
-    (mealIndex: number, items: Item[]) => {
+    (
+      mealIndex: number,
+      items: Item[],
+      supplements: SupplementItem[]
+    ) => {
       setMealsItems((prev) => ({
         ...prev,
         [mealIndex]: items,
+      }));
+
+      setMealsSupplements((prev) => ({
+        ...prev,
+        [mealIndex]: supplements,
       }));
     },
     []
   );
 
   /* =============================
-     TOTAL DIARIO (solo principales)
+     TOTAL DIARIO
   ============================== */
   const totalDay: Totals = useMemo(() => {
     return Object.values(mealsItems).reduce(
@@ -159,8 +191,6 @@ export default function DietPlanner({
 
   /* =============================
      GUARDAR DIETA
-     → principales primero
-     → sustituciones con FK real
   ============================== */
   const saveDiet = async () => {
     if (!clientId || saving) return;
@@ -186,11 +216,13 @@ export default function DietPlanner({
 
       for (let i = 0; i < mealsCount; i++) {
         const meal = await createMeal(diet.id, i);
+
         const items = mealsItems[i] ?? [];
+        const supplements = mealsSupplements[i] ?? [];
 
         const mainIdMap = new Map<string, string>();
 
-        // 1️⃣ PRINCIPALES
+        // PRINCIPALES
         for (const item of items.filter((i) => i.role === "main")) {
           if (item.grams <= 0) continue;
 
@@ -205,7 +237,7 @@ export default function DietPlanner({
           mainIdMap.set(item.id, created.id);
         }
 
-        // 2️⃣ SUSTITUCIONES
+        // SUSTITUCIONES
         for (const item of items.filter((i) => i.role === "substitute")) {
           if (item.grams <= 0) continue;
           if (!item.parentItemId) continue;
@@ -220,6 +252,20 @@ export default function DietPlanner({
             "substitute",
             parentDbId
           );
+        }
+
+        // SUPLEMENTOS
+        for (const s of supplements) {
+          if (!s.name.trim()) continue;
+
+          await createDietSupplement({
+            mealId: meal.id,
+            name: s.name,
+            amount: s.amount,
+            unit: s.unit,
+            timing: s.timing,
+            notes: s.notes,
+          });
         }
       }
 
@@ -249,12 +295,6 @@ export default function DietPlanner({
           onChange={(e) => {
             const n = Number(e.target.value);
             setMealsCount(n);
-
-            setMealsItems((prev) => {
-              const next: Record<number, Item[]> = {};
-              for (let i = 0; i < n; i++) next[i] = prev[i] ?? [];
-              return next;
-            });
           }}
         >
           {[3, 4, 5, 6, 7, 8].map((n) => (
@@ -286,7 +326,10 @@ export default function DietPlanner({
               title={`Comida ${i + 1}`}
               foods={foods}
               initialItems={mealsItems[i] ?? []}
-              onChange={(items) => handleMealChange(i, items)}
+              initialSupplements={mealsSupplements[i] ?? []}
+              onChange={(items, supplements) =>
+                handleMealChange(i, items, supplements)
+              }
             />
           ))}
         </section>

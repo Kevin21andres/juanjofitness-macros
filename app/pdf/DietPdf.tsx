@@ -1,4 +1,3 @@
-// app/pdf/DietPdf.tsx
 import {
   Document,
   Page,
@@ -47,13 +46,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: "Helvetica-Bold",
     color: "#FFFFFF",
-    marginBottom: 4,
   },
 
   heroMeta: {
     fontSize: 10,
     color: "#DBEAFE",
-    marginTop: 4,
+    marginTop: 6,
   },
 
   sectionTitle: {
@@ -132,6 +130,26 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
 
+  supplementBlock: {
+    marginTop: 8,
+    paddingTop: 6,
+    borderTop: `1 solid ${COLORS.border}`,
+  },
+
+  supplementTitle: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    color: COLORS.muted,
+    marginBottom: 4,
+  },
+
+  supplementRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    fontSize: 10,
+    paddingVertical: 2,
+  },
+
   emptyMeal: {
     fontSize: 10,
     color: COLORS.muted,
@@ -187,10 +205,7 @@ function MacroBar({
         <View
           style={[
             styles.barFill,
-            {
-              width: `${percent}%`,
-              backgroundColor: color,
-            },
+            { width: `${percent}%`, backgroundColor: color },
           ]}
         />
       </View>
@@ -199,7 +214,7 @@ function MacroBar({
 }
 
 /* =========================
-   PDF CANÓNICO (MODELO NUEVO)
+   PDF
 ========================= */
 export default function DietPdf({ diet }: Props) {
   const totalMacros =
@@ -227,9 +242,7 @@ export default function DietPdf({ diet }: Props) {
 
         <View style={styles.card}>
           <Text style={styles.macroLine}>
-            <Text style={styles.macroLabel}>
-              Energía:{" "}
-            </Text>
+            <Text style={styles.macroLabel}>Energía: </Text>
             <Text style={styles.macroValue}>
               {diet.totals.kcal} kcal
             </Text>
@@ -297,13 +310,11 @@ export default function DietPdf({ diet }: Props) {
                 ) : (
                   mainItems.map((item) => {
                     const subs = substitutes.filter(
-                      (s) =>
-                        s.parent_item_id === item.id
+                      (s) => s.parent_item_id === item.id
                     );
 
                     return (
                       <View key={item.id}>
-                        {/* Principal */}
                         <View style={styles.foodRow}>
                           <Text style={styles.foodName}>
                             {item.food.name}
@@ -313,7 +324,6 @@ export default function DietPdf({ diet }: Props) {
                           </Text>
                         </View>
 
-                        {/* Sustituciones */}
                         {subs.map((sub) => (
                           <View
                             key={sub.id}
@@ -340,6 +350,32 @@ export default function DietPdf({ diet }: Props) {
                       </View>
                     );
                   })
+                )}
+
+                {/* SUPLEMENTOS */}
+                {meal.supplements?.length > 0 && (
+                  <View style={styles.supplementBlock}>
+                    <Text style={styles.supplementTitle}>
+                      Suplementos
+                    </Text>
+
+                    {meal.supplements.map((s) => (
+                      <View
+                        key={s.id}
+                        style={styles.supplementRow}
+                      >
+                        <Text>
+                          {s.name}
+                          {s.timing && ` (${s.timing})`}
+                        </Text>
+                        <Text>
+                          {s.amount != null
+                            ? `${s.amount} ${s.unit ?? ""}`
+                            : ""}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
                 )}
               </View>
             );

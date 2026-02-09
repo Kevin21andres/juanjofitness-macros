@@ -3,6 +3,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Food } from "@/lib/foodsApi";
+import SupplementList from "@/app/components/SupplementList";
+import { SupplementItem } from "@/app/types/supplement";
 
 /* =========================
    TIPOS
@@ -19,18 +21,20 @@ export type Item = {
 type Props = {
   title: string;
   foods: Food[];
-  onChange: (items: Item[]) => void;
+  onChange: (
+    items: Item[],
+    supplements: SupplementItem[]
+  ) => void;
   initialItems?: Item[];
+  initialSupplements?: SupplementItem[];
 };
 
 /* =========================
    NORMALIZAR ITEMS (CLON)
-   → FIX DEFINITIVO
 ========================= */
 function normalizeItems(items: Item[]): Item[] {
   const idMap = new Map<string, string>();
 
-  // 1️⃣ asignar nuevos IDs a TODOS
   const withIds = items.map((item) => {
     const newId = crypto.randomUUID();
     idMap.set(item.id, newId);
@@ -41,7 +45,6 @@ function normalizeItems(items: Item[]): Item[] {
     };
   });
 
-  // 2️⃣ reparar parentItemId
   return withIds.map((item) => ({
     ...item,
     parentItemId: item.parentItemId
@@ -59,37 +62,46 @@ export default function FoodCalculator({
   foods,
   onChange,
   initialItems = [],
+  initialSupplements = [],
 }: Props) {
   const [items, setItems] = useState<Item[]>([]);
+  const [supplements, setSupplements] = useState<SupplementItem[]>([]);
   const initializedRef = useRef(false);
 
   /* =========================
-     INICIALIZAR SOLO 1 VEZ
-     + NORMALIZAR CLON
+     INIT (1 SOLA VEZ)
   ========================= */
   useEffect(() => {
     if (initializedRef.current) return;
 
-    const normalized = normalizeItems(initialItems);
-    setItems(normalized);
-    onChange(normalized);
+    const normalizedItems = normalizeItems(initialItems);
+    setItems(normalizedItems);
+    setSupplements(initialSupplements);
+
+    onChange(normalizedItems, initialSupplements);
 
     initializedRef.current = true;
-  }, [initialItems, onChange]);
+  }, [initialItems, initialSupplements, onChange]);
 
-  const notify = (next: Item[]) => {
-    setItems(next);
-    onChange(next);
+  const notify = (
+    nextItems: Item[] = items,
+    nextSupplements: SupplementItem[] = supplements
+  ) => {
+    setItems(nextItems);
+    setSupplements(nextSupplements);
+    onChange(nextItems, nextSupplements);
   };
 
   /* =========================
-     PRINCIPALES
+     ALIMENTOS
   ========================= */
   const mainItems = items.filter((i) => i.role === "main");
 
   const getSubstitutions = (parentId: string) =>
     items.filter(
-      (i) => i.role === "substitute" && i.parentItemId === parentId
+      (i) =>
+        i.role === "substitute" &&
+        i.parentItemId === parentId
     );
 
   const addMainItem = () => {
@@ -107,7 +119,11 @@ export default function FoodCalculator({
   };
 
   const removeMainItem = (id: string) => {
-    notify(items.filter((i) => i.id !== id && i.parentItemId !== id));
+    notify(
+      items.filter(
+        (i) => i.id !== id && i.parentItemId !== id
+      )
+    );
   };
 
   const updateItem = (
@@ -115,7 +131,11 @@ export default function FoodCalculator({
     field: "foodId" | "grams",
     value: string | number
   ) => {
-    notify(items.map((i) => (i.id === id ? { ...i, [field]: value } : i)));
+    notify(
+      items.map((i) =>
+        i.id === id ? { ...i, [field]: value } : i
+      )
+    );
   };
 
   /* =========================
@@ -157,23 +177,27 @@ export default function FoodCalculator({
     { kcal: 0, protein: 0, carbs: 0, fat: 0 }
   );
 
+  /* =========================
+     RENDER
+  ========================= */
   return (
-    <section className="card space-y-5 h-full">
+    <section className="card space-y-6 h-full">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-white font-medium">{title}</h3>
         <span className="text-xs text-white/50">
-          {mainItems.length} alimentos
+          {mainItems.length} alimentos ·{" "}
+          {supplements.length} suplementos
         </span>
       </div>
 
-      {/* PRINCIPALES */}
+      {/* ALIMENTOS */}
       {mainItems.map((item) => {
         const subs = getSubstitutions(item.id);
 
         return (
           <div
-            key={`main-${item.id}`}
+            key={item.id}
             className="space-y-2 border-b border-white/10 pb-3"
           >
             {/* Principal */}
@@ -198,7 +222,11 @@ export default function FoodCalculator({
                 className="input text-right"
                 value={item.grams}
                 onChange={(e) =>
-                  updateItem(item.id, "grams", Number(e.target.value))
+                  updateItem(
+                    item.id,
+                    "grams",
+                    Number(e.target.value)
+                  )
                 }
               />
 
@@ -215,18 +243,25 @@ export default function FoodCalculator({
               <div className="ml-4 space-y-2">
                 {subs.map((sub) => (
                   <div
-                    key={`sub-${sub.id}`}
+                    key={sub.id}
                     className="grid grid-cols-[1fr_90px_28px] gap-3 items-center"
                   >
                     <select
                       className="input"
                       value={sub.foodId}
                       onChange={(e) =>
-                        updateItem(sub.id, "foodId", e.target.value)
+                        updateItem(
+                          sub.id,
+                          "foodId",
+                          e.target.value
+                        )
                       }
                     >
                       {foods.map((food) => (
-                        <option key={food.id} value={food.id}>
+                        <option
+                          key={food.id}
+                          value={food.id}
+                        >
                           {food.name}
                         </option>
                       ))}
@@ -238,12 +273,18 @@ export default function FoodCalculator({
                       className="input text-right"
                       value={sub.grams}
                       onChange={(e) =>
-                        updateItem(sub.id, "grams", Number(e.target.value))
+                        updateItem(
+                          sub.id,
+                          "grams",
+                          Number(e.target.value)
+                        )
                       }
                     />
 
                     <button
-                      onClick={() => removeSubstitution(sub.id)}
+                      onClick={() =>
+                        removeSubstitution(sub.id)
+                      }
                       className="text-white/40 hover:text-red-400"
                     >
                       ✕
@@ -263,7 +304,6 @@ export default function FoodCalculator({
         );
       })}
 
-      {/* Acción */}
       <button
         onClick={addMainItem}
         disabled={!foods.length}
@@ -272,7 +312,15 @@ export default function FoodCalculator({
         + Añadir alimento
       </button>
 
-      {/* Totales */}
+      {/* SUPLEMENTOS — DENTRO DE LA COMIDA */}
+      <div className="border-t border-white/10 pt-4">
+        <SupplementList
+          supplements={supplements}
+          onChange={(next) => notify(items, next)}
+        />
+      </div>
+
+      {/* TOTALES */}
       {totals.kcal > 0 && (
         <div className="bg-[#0B0B0B] rounded-xl p-4 border border-white/10">
           <div className="grid grid-cols-2 gap-3 text-sm">

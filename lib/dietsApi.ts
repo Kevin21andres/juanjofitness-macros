@@ -1,5 +1,5 @@
-// lib/dietsApi.ts
 import { supabase } from "./supabaseClient";
+import { DietSupplement } from "./dietSupplementsApi";
 
 /* =========================
    TIPOS BASE (MODELO REAL)
@@ -36,6 +36,7 @@ export type DietMeal = {
   id: string;
   meal_index: number;
   items: DietItem[];
+  supplements: DietSupplement[];
 };
 
 export type DietTotals = {
@@ -190,6 +191,16 @@ export async function getDietDetail(
             carbs_100,
             fat_100
           )
+        ),
+        diet_supplements (
+          id,
+          meal_id,
+          name,
+          amount,
+          unit,
+          timing,
+          notes,
+          created_at
         )
       )
     `)
@@ -208,6 +219,7 @@ export async function getDietDetail(
       parent_item_id: item.parent_item_id,
       food: item.foods,
     })),
+    supplements: meal.diet_supplements ?? [],
   }));
 
   const totals = calculateDietTotals(meals);
@@ -257,6 +269,16 @@ export async function getSharedDietByToken(
               carbs_100,
               fat_100
             )
+          ),
+          diet_supplements (
+            id,
+            meal_id,
+            name,
+            amount,
+            unit,
+            timing,
+            notes,
+            created_at
           )
         )
       )
@@ -281,6 +303,7 @@ export async function getSharedDietByToken(
       parent_item_id: item.parent_item_id,
       food: item.foods,
     })),
+    supplements: meal.diet_supplements ?? [],
   }));
 
   const totals = calculateDietTotals(meals);
@@ -302,8 +325,9 @@ export async function getSharedDietByToken(
 }
 
 /* =========================
-   CLONAR DIETA (FIX FINAL)
-   → INCLUYE ID DEL ITEM
+   CLONAR DIETA (BASE)
+   → items listos
+   → suplementos preparados
 ========================= */
 
 export async function getDietCloneData(
@@ -314,11 +338,18 @@ export async function getDietCloneData(
   meals: {
     meal_index: number;
     items: {
-      id: string; // ✅ CLAVE
+      id: string;
       food_id: string;
       grams: number;
       role: "main" | "substitute";
       parent_item_id: string | null;
+    }[];
+    supplements: {
+      name: string;
+      amount: number | null;
+      unit: string | null;
+      timing: string | null;
+      notes: string | null;
     }[];
   }[];
 } | null> {
@@ -331,11 +362,18 @@ export async function getDietCloneData(
     meals: diet.meals.map((meal) => ({
       meal_index: meal.meal_index,
       items: meal.items.map((item) => ({
-        id: item.id,                 // ✅ imprescindible
+        id: item.id,
         food_id: item.food.id,
         grams: item.grams,
         role: item.role,
         parent_item_id: item.parent_item_id,
+      })),
+      supplements: meal.supplements.map((s) => ({
+        name: s.name,
+        amount: s.amount,
+        unit: s.unit,
+        timing: s.timing,
+        notes: s.notes,
       })),
     })),
   };
