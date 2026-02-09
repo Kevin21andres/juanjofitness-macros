@@ -166,7 +166,7 @@ export default async function SharedDietPage({
         <footer className="pt-6 text-center text-xs text-white/40">
           Plan nutricional generado con{" "}
           <span className="text-[var(--color-accent)] font-medium">
-            JuanjoFitness
+            INTAKE
           </span>
         </footer>
       </div>

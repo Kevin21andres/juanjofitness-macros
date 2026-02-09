@@ -390,7 +390,7 @@ export default function DietPdf({ diet }: Props) {
           })}
 
         <Text style={styles.footer}>
-          Plan nutricional generado con JuanjoFitness
+          Plan nutricional generado con INTAKE
         </Text>
       </Page>
     </Document>
