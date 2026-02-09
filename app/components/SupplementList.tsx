@@ -26,6 +26,7 @@ const UNITS = [
 const SUPPLEMENTS = [
   "GFS",
   "PVP",
+  "Pre-Work",
   "Omega 3",
   "CLA",
   "BCAAs + L-Glutamina",
