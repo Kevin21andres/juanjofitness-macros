@@ -30,10 +30,11 @@ export async function middleware(req: NextRequest) {
 
   const pathname = req.nextUrl.pathname;
 
-  // ✅ Rutas públicas
+  // ✅ RUTAS PÚBLICAS
   if (
     pathname === "/login" ||
-    pathname.startsWith("/share/diet")
+    pathname.startsWith("/share/diet") ||
+    pathname.startsWith("/api/diets/shared")
   ) {
     return res;
   }
@@ -47,6 +48,7 @@ export async function middleware(req: NextRequest) {
 
   return res;
 }
+
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico).*)",
