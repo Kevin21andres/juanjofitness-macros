@@ -80,6 +80,7 @@ export default async function SharedDietPage({
                     🍽️ Comida {meal.meal_index + 1}
                   </h2>
 
+                  {/* ALIMENTOS */}
                   {mainItems.length === 0 ? (
                     <p className="text-white/40 italic">
                       Sin alimentos asignados
@@ -94,7 +95,6 @@ export default async function SharedDietPage({
 
                         return (
                           <li key={item.id}>
-                            {/* Principal */}
                             <div className="flex justify-between items-center py-2 border-b border-white/10">
                               <span className="text-white/90">
                                 {item.food.name}
@@ -104,7 +104,6 @@ export default async function SharedDietPage({
                               </span>
                             </div>
 
-                            {/* Sustituciones */}
                             {subs.length > 0 && (
                               <ul className="mt-1 ml-4 space-y-1">
                                 {subs.map((sub) => (
@@ -126,6 +125,30 @@ export default async function SharedDietPage({
                         );
                       })}
                     </ul>
+                  )}
+
+                  {/* SUPLEMENTACIÓN */}
+                  {meal.supplements?.length > 0 && (
+                    <div className="pt-4 border-t border-white/10 space-y-2">
+                      <p className="text-xs font-semibold text-white/60">
+                        💊 Suplementación
+                      </p>
+
+                      <ul className="space-y-1 text-sm">
+                        {meal.supplements.map((s) => (
+                          <li
+                            key={s.id}
+                            className="flex justify-between items-center text-white/80"
+                          >
+                            <span>{s.name}</span>
+                            <span className="text-white/50 text-xs">
+                              {s.amount}
+                              {s.unit ? ` ${s.unit}` : ""}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
                 </div>
               );
