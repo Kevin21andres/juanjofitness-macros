@@ -1,3 +1,4 @@
+// app/pdf/DietPdf.tsx
 import {
   Document,
   Page,
@@ -6,6 +7,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import { SharedDiet } from "@/lib/dietsApi";
+import { formatEggAmount } from "@/lib/formatEggAmount";
 
 /* =========================
    COLORES CORPORATIVOS
@@ -320,7 +322,10 @@ export default function DietPdf({ diet }: Props) {
                             {item.food.name}
                           </Text>
                           <Text style={styles.grams}>
-                            {item.grams} g
+                            {formatEggAmount(
+                              item.food.name,
+                              item.grams
+                            )}
                           </Text>
                         </View>
 
@@ -343,7 +348,10 @@ export default function DietPdf({ diet }: Props) {
                                 styles.substituteLabel,
                               ]}
                             >
-                              {sub.grams} g
+                              {formatEggAmount(
+                                sub.food.name,
+                                sub.grams
+                              )}
                             </Text>
                           </View>
                         ))}

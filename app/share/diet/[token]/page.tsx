@@ -1,6 +1,7 @@
 // app/share/diet/[token]/page.tsx
 import { notFound } from "next/navigation";
 import { getSharedDietByToken } from "@/lib/dietsApi";
+import { formatEggAmount } from "@/lib/formatEggAmount";
 
 export default async function SharedDietPage({
   params,
@@ -100,7 +101,10 @@ export default async function SharedDietPage({
                                 {item.food.name}
                               </span>
                               <span className="text-white/50 text-xs">
-                                {item.grams} g
+                                {formatEggAmount(
+                                  item.food.name,
+                                  item.grams
+                                )}
                               </span>
                             </div>
 
@@ -115,7 +119,10 @@ export default async function SharedDietPage({
                                       ↳ {sub.food.name}
                                     </span>
                                     <span>
-                                      {sub.grams} g
+                                      {formatEggAmount(
+                                        sub.food.name,
+                                        sub.grams
+                                      )}
                                     </span>
                                   </li>
                                 ))}

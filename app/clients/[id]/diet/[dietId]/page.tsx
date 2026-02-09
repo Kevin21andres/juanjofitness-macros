@@ -1,9 +1,11 @@
+// app/clients/[id]/diet/[dietId]/page.tsx
 "use client";
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { getDietDetail, DietDetail } from "@/lib/dietsApi";
 import MacroDonut from "@/app/components/MacroDonut";
+import { formatEggAmount } from "@/lib/formatEggAmount";
 
 type Totals = {
   kcal: number;
@@ -154,7 +156,10 @@ export default function DietDetailPage({
                             <div className="flex justify-between">
                               <span>{item.food.name}</span>
                               <span className="text-white/50">
-                                {item.grams} g
+                                {formatEggAmount(
+                                  item.food.name,
+                                  item.grams
+                                )}
                               </span>
                             </div>
 
@@ -169,7 +174,10 @@ export default function DietDetailPage({
                                       ↳ {sub.food.name}
                                     </span>
                                     <span>
-                                      {sub.grams} g
+                                      {formatEggAmount(
+                                        sub.food.name,
+                                        sub.grams
+                                      )}
                                     </span>
                                   </li>
                                 ))}
