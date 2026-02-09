@@ -1,3 +1,4 @@
+// app/lib/dietSupplementsApi.ts
 import { supabase } from "./supabaseClient";
 
 /* =========================
