@@ -52,6 +52,7 @@ const SUPPLEMENTS = [
   "Vitamina D",
   "Colágeno",
   "Multicell PRO",
+  "Glutamina",
 ];
 
 /* =========================
