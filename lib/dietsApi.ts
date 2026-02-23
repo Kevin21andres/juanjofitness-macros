@@ -1,3 +1,4 @@
+//app/lib/dietsApi.ts
 import { supabase } from "./supabaseClient";
 import { DietSupplement } from "./dietSupplementsApi";
 
@@ -35,6 +36,7 @@ export type DietItem = {
 export type DietMeal = {
   id: string;
   meal_index: number;
+  notes: string | null; // 👈 AÑADIR ESTO
   items: DietItem[];
   supplements: DietSupplement[];
 };
@@ -178,6 +180,7 @@ export async function getDietDetail(
       diet_meals (
         id,
         meal_index,
+        notes,
         diet_items (
           id,
           grams,
@@ -212,6 +215,7 @@ export async function getDietDetail(
   const meals: DietMeal[] = data.diet_meals.map((meal: any) => ({
     id: meal.id,
     meal_index: meal.meal_index,
+    notes: meal.notes ?? null,
     items: meal.diet_items.map((item: any) => ({
       id: item.id,
       grams: item.grams,
@@ -256,6 +260,7 @@ export async function getSharedDietByToken(
         diet_meals (
           id,
           meal_index,
+          notes,
           diet_items (
             id,
             grams,
@@ -296,6 +301,7 @@ export async function getSharedDietByToken(
   const meals: DietMeal[] = diet.diet_meals.map((meal: any) => ({
     id: meal.id,
     meal_index: meal.meal_index,
+    notes: meal.notes ?? null,
     items: meal.diet_items.map((item: any) => ({
       id: item.id,
       grams: item.grams,
@@ -337,6 +343,7 @@ export async function getDietCloneData(
   notes: string | null;
   meals: {
     meal_index: number;
+    notes: string | null;
     items: {
       id: string;
       food_id: string;
@@ -361,6 +368,7 @@ export async function getDietCloneData(
     notes: diet.notes,
     meals: diet.meals.map((meal) => ({
       meal_index: meal.meal_index,
+      notes: meal.notes ?? null,
       items: meal.items.map((item) => ({
         id: item.id,
         food_id: item.food.id,

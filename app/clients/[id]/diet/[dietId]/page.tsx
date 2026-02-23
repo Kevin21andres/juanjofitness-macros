@@ -137,6 +137,11 @@ export default function DietDetailPage({
                   <h3 className="text-white font-medium">
                     🍽️ Comida {meal.meal_index + 1}
                   </h3>
+                  {meal.notes?.trim() && (
+                    <div className="text-xs text-white/70 bg-white/5 border border-white/10 rounded-lg p-3">
+                      NOTA: {meal.notes}
+                    </div>
+                  )}
 
                   {/* ALIMENTOS */}
                   {mainItems.length === 0 ? (

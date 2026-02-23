@@ -27,6 +27,7 @@ export type CloneDietData = {
   notes: string | null;
   meals: {
     meal_index: number;
+    notes: string | null;
     items: {
       id?: string;
       food_id: string;
@@ -77,6 +78,24 @@ export default function DietPlanner({
 
   const [mealsSupplements, setMealsSupplements] =
     useState<Record<number, SupplementItem[]>>({});
+  
+const [mealsNotes, setMealsNotes] =
+  useState<Record<number, string>>({});
+
+/* 👇 AQUI AÑADE EL EFECTO 👇 */
+useEffect(() => {
+  setMealsNotes((prev) => {
+    const next = { ...prev };
+
+    for (let i = 0; i < mealsCount; i++) {
+      if (next[i] === undefined) {
+        next[i] = "";
+      }
+    }
+
+    return next;
+  });
+}, [mealsCount]);
 
   const [foods, setFoods] = useState<Food[]>([]);
   const [loadingFoods, setLoadingFoods] = useState(true);
@@ -109,6 +128,7 @@ export default function DietPlanner({
 
     const items: Record<number, Item[]> = {};
     const supplements: Record<number, SupplementItem[]> = {};
+    const notesByMeal: Record<number, string> = {};
 
     initialDiet.meals.forEach((meal) => {
       const idMap = new Map<string, string>();
@@ -126,6 +146,7 @@ export default function DietPlanner({
           ? idMap.get(item.parent_item_id)
           : undefined,
       }));
+      notesByMeal[meal.meal_index] = meal.notes ?? "";
 
       supplements[meal.meal_index] =
         meal.supplements?.map((s) => ({
@@ -140,6 +161,7 @@ export default function DietPlanner({
 
     setMealsItems(items);
     setMealsSupplements(supplements);
+    setMealsNotes(notesByMeal);
   }, [initialDiet]);
 
   /* =============================
@@ -149,7 +171,8 @@ export default function DietPlanner({
     (
       mealIndex: number,
       items: Item[],
-      supplements: SupplementItem[]
+      supplements: SupplementItem[],
+      notes: string
     ) => {
       setMealsItems((prev) => ({
         ...prev,
@@ -159,6 +182,11 @@ export default function DietPlanner({
       setMealsSupplements((prev) => ({
         ...prev,
         [mealIndex]: supplements,
+      }));
+
+      setMealsNotes((prev) => ({
+        ...prev,
+        [mealIndex]: notes,
       }));
     },
     []
@@ -215,8 +243,12 @@ export default function DietPlanner({
       });
 
       for (let i = 0; i < mealsCount; i++) {
-        const meal = await createMeal(diet.id, i);
-
+        const mealNotes = mealsNotes[i] ?? "";
+        const meal = await createMeal(
+          diet.id,
+          i,
+          mealNotes.trim() || null
+        );
         const items = mealsItems[i] ?? [];
         const supplements = mealsSupplements[i] ?? [];
 
@@ -327,8 +359,9 @@ export default function DietPlanner({
               foods={foods}
               initialItems={mealsItems[i] ?? []}
               initialSupplements={mealsSupplements[i] ?? []}
-              onChange={(items, supplements) =>
-                handleMealChange(i, items, supplements)
+              initialNotes={mealsNotes[i] ?? ""}
+              onChange={(items, supplements, notes) =>
+                handleMealChange(i, items, supplements, notes)
               }
             />
           ))}

@@ -80,6 +80,11 @@ export default async function SharedDietPage({
                   <h2 className="text-sm font-medium flex items-center gap-2 text-[var(--color-accent)]">
                     🍽️ Comida {meal.meal_index + 1}
                   </h2>
+                  {meal.notes?.trim() && (
+                    <div className="rounded-lg bg-white/5 border border-white/10 p-3 text-xs text-white/70 whitespace-pre-line">
+                      NOTA: {meal.notes}
+                    </div>
+                  )}
 
                   {/* ALIMENTOS */}
                   {mainItems.length === 0 ? (

@@ -23,10 +23,13 @@ type Props = {
   foods: Food[];
   onChange: (
     items: Item[],
-    supplements: SupplementItem[]
+    supplements: SupplementItem[],
+    notes: string
   ) => void;
   initialItems?: Item[];
   initialSupplements?: SupplementItem[];
+  initialNotes?: string | null;
+
 };
 
 /* =========================
@@ -63,33 +66,40 @@ export default function FoodCalculator({
   onChange,
   initialItems = [],
   initialSupplements = [],
+  initialNotes = null,
 }: Props) {
   const [items, setItems] = useState<Item[]>([]);
   const [supplements, setSupplements] = useState<SupplementItem[]>([]);
+  const [notes, setNotes] = useState(initialNotes ?? "");
   const initializedRef = useRef(false);
 
   /* =========================
      INIT (1 SOLA VEZ)
   ========================= */
+
+  
   useEffect(() => {
     if (initializedRef.current) return;
 
     const normalizedItems = normalizeItems(initialItems);
     setItems(normalizedItems);
     setSupplements(initialSupplements);
+    setNotes(initialNotes ?? "");
 
-    onChange(normalizedItems, initialSupplements);
+    onChange(normalizedItems, initialSupplements, initialNotes ?? "");
 
     initializedRef.current = true;
-  }, [initialItems, initialSupplements, onChange]);
+  }, [initialItems, initialSupplements, initialNotes, onChange]);
 
   const notify = (
     nextItems: Item[] = items,
-    nextSupplements: SupplementItem[] = supplements
+    nextSupplements: SupplementItem[] = supplements,
+    nextNotes: string = notes
   ) => {
     setItems(nextItems);
     setSupplements(nextSupplements);
-    onChange(nextItems, nextSupplements);
+    setNotes(nextNotes);
+    onChange(nextItems, nextSupplements, nextNotes);
   };
 
   /* =========================
@@ -190,6 +200,15 @@ export default function FoodCalculator({
           {supplements.length} suplementos
         </span>
       </div>
+      {/* NOTA DE LA COMIDA */}
+      <textarea
+        className="input"
+        placeholder="Nota de esta comida..."
+        value={notes}
+        onChange={(e) =>
+          notify(items, supplements, e.target.value)
+        }
+      />
 
       {/* ALIMENTOS */}
       {mainItems.map((item) => {

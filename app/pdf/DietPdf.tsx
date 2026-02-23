@@ -304,6 +304,13 @@ export default function DietPdf({ diet }: Props) {
                 <Text style={styles.mealTitle}>
                   Comida {meal.meal_index + 1}
                 </Text>
+                {meal.notes?.trim() && (
+                  <View style={{ marginBottom: 8 }}>
+                    <Text style={[styles.notesText, { color: COLORS.muted }]}>
+                      NOTA: {meal.notes}
+                    </Text>
+                  </View>
+                )}
 
                 {mainItems.length === 0 ? (
                   <Text style={styles.emptyMeal}>

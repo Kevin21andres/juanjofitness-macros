@@ -1,3 +1,4 @@
+//app/lib/dietMealsApi.ts
 import { supabase } from "./supabaseClient";
 
 /* =========================
@@ -8,6 +9,7 @@ export type DietMeal = {
   id: string;
   diet_id: string;
   meal_index: number;
+  notes: string | null;
 };
 
 /* =========================
@@ -15,7 +17,8 @@ export type DietMeal = {
 ========================= */
 export async function createMeal(
   dietId: string,
-  mealIndex: number
+  mealIndex: number,
+  notes: string | null
 ): Promise<DietMeal> {
   if (mealIndex < 0) {
     throw new Error("mealIndex debe ser mayor o igual a 0");
@@ -26,6 +29,7 @@ export async function createMeal(
     .insert({
       diet_id: dietId,
       meal_index: mealIndex,
+      notes: notes,
     })
     .select()
     .single();
@@ -94,6 +98,23 @@ export async function deleteMeal(
   }
 }
 
+export async function updateMealNotes(
+  mealId: string,
+  notes: string | null
+): Promise<void> {
+  const { error } = await supabase
+    .from("diet_meals")
+    .update({ notes })
+    .eq("id", mealId);
+
+  if (error) {
+    console.error("Error actualizando notas de la comida", {
+      mealId,
+      error,
+    });
+    throw error;
+  }
+}
 /* =========================
    OBTENER COMIDAS DE UNA DIETA
    (sin joins pesados)
