@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { getDashboardStats } from "@/lib/dashboardApi";
 
 type Stats = {
@@ -20,18 +21,24 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen px-6 py-10 bg-gradient-to-br from-[#0B0B0B] via-[#0E1622] to-[#0B0B0B]">
-
       <div className="max-w-6xl mx-auto space-y-14">
 
+        {/* LOGO */}
+        <div className="flex justify-center">
+          <img
+            src="/logo.png"
+            alt="Juanjo Fitness Logo"
+            width={320}
+            height={120}
+            className="object-contain"
+          />
+        </div>
+
         {/* HERO */}
-        <header className="space-y-3">
+        <header className="space-y-3 text-center">
           <h1 className="text-4xl font-semibold text-white tracking-tight">
             Panel de control
           </h1>
-
-          <p className="text-white/60">
-            Juanjo<span className="text-[var(--color-accent)]">Fitness</span> · Gestión nutricional
-          </p>
         </header>
 
         {/* ACCIONES PRINCIPALES */}

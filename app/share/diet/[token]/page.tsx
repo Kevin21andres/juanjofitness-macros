@@ -19,8 +19,17 @@ export default async function SharedDietPage({
     <div className="min-h-screen bg-gradient-to-br from-[#0B0B0B] via-[#0E1622] to-[#0B0B0B] text-white">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-12">
 
+        {/* LOGO */}
+        <div className="flex justify-center">
+          <img
+            src="/logo.png"
+            alt="Juanjo Fitness"
+            className="w-[220px] sm:w-[280px] object-contain opacity-95"
+          />
+        </div>
+
         {/* HERO */}
-        <header className="space-y-6">
+        <header className="space-y-6 text-center">
           <div className="space-y-2">
             <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
               {diet.name}
@@ -80,13 +89,13 @@ export default async function SharedDietPage({
                   <h2 className="text-sm font-medium flex items-center gap-2 text-[var(--color-accent)]">
                     🍽️ Comida {meal.meal_index + 1}
                   </h2>
+
                   {meal.notes?.trim() && (
                     <div className="rounded-lg bg-white/5 border border-white/10 p-3 text-xs text-white/70 whitespace-pre-line">
                       NOTA: {meal.notes}
                     </div>
                   )}
 
-                  {/* ALIMENTOS */}
                   {mainItems.length === 0 ? (
                     <p className="text-white/40 italic">
                       Sin alimentos asignados
@@ -95,8 +104,7 @@ export default async function SharedDietPage({
                     <ul className="space-y-2 text-sm">
                       {mainItems.map((item) => {
                         const subs = substitutes.filter(
-                          (s) =>
-                            s.parent_item_id === item.id
+                          (s) => s.parent_item_id === item.id
                         );
 
                         return (
@@ -139,7 +147,6 @@ export default async function SharedDietPage({
                     </ul>
                   )}
 
-                  {/* SUPLEMENTACIÓN */}
                   {meal.supplements?.length > 0 && (
                     <div className="pt-4 border-t border-white/10 space-y-2">
                       <p className="text-xs font-semibold text-white/60">

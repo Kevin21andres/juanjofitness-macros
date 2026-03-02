@@ -32,7 +32,7 @@ export default function SaveDietModal({
   const [error, setError] = useState<string | null>(null);
 
   /* =========================
-    PDF (SERVER CANÓNICO)
+    PDF (MÓVIL COMPATIBLE)
   ========================= */
   const handlePdf = async () => {
     if (generatingPdf) return;
@@ -41,16 +41,22 @@ export default function SaveDietModal({
       setError(null);
       setGeneratingPdf(true);
 
+      // 1️⃣ Abrimos ventana inmediatamente (gesto usuario válido para Safari)
+      const newWindow = window.open("", "_blank");
+
       const { token } = await createDietShare({
         dietId: diet.id,
         channel: "email",
         sentTo: clientName,
       });
 
-      window.open(
-        `/api/diets/shared/${token}/pdf`,
-        "_blank"
-      );
+      // 2️⃣ Redirigimos la ventana abierta
+      if (newWindow) {
+        newWindow.location.href = `/api/diets/shared/${token}/pdf`;
+      } else {
+        // Fallback por si el navegador bloquea popups
+        window.location.href = `/api/diets/shared/${token}/pdf`;
+      }
     } catch (e) {
       console.error(e);
       setError("Error generando el PDF");
@@ -142,6 +148,7 @@ export default function SaveDietModal({
           <button
             onClick={handlePdf}
             disabled={generatingPdf}
+            className="bg-white/10 hover:bg-white/20 transition rounded-lg py-2 text-white"
           >
             {generatingPdf ? "⏳ PDF…" : "📄 PDF"}
           </button>
@@ -149,6 +156,7 @@ export default function SaveDietModal({
           <button
             onClick={handleEmail}
             disabled={!clientEmail || sharingEmail}
+            className="bg-white/10 hover:bg-white/20 transition rounded-lg py-2 text-white disabled:opacity-40"
           >
             {sharingEmail ? "⏳ Email…" : "📧 Email"}
           </button>
@@ -156,6 +164,7 @@ export default function SaveDietModal({
           <button
             onClick={handleWhatsapp}
             disabled={!clientPhone || sharingWhatsapp}
+            className="bg-white/10 hover:bg-white/20 transition rounded-lg py-2 text-white disabled:opacity-40"
           >
             {sharingWhatsapp ? "⏳ WhatsApp…" : "📲 WhatsApp"}
           </button>
@@ -170,6 +179,7 @@ export default function SaveDietModal({
             onClose();
             router.push("/clients");
           }}
+          className="w-full mt-3 bg-[var(--color-accent)] hover:opacity-90 transition rounded-lg py-2 text-black font-medium"
         >
           Cerrar
         </button>
