@@ -2,25 +2,24 @@
 import { pdf } from "@react-pdf/renderer";
 import DietPdf from "@/app/pdf/DietPdf";
 import { SharedDiet } from "@/lib/dietsApi";
-import fs from "fs";
-import path from "path";
+import logoFile from "@/lib/assets/logo.png";
 
 export async function generateDietPdfServer(
   diet: SharedDiet
 ): Promise<ArrayBuffer> {
   try {
-    // 📌 Leer el logo desde la carpeta public
-    const logoPath = path.join(process.cwd(), "public", "logo.png");
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "http://localhost:3000";
 
-    const logoBuffer = fs.readFileSync(logoPath);
+    const logoUrl = `${baseUrl}${logoFile.src}`;
 
-    // Convertir a base64 compatible con react-pdf
-    const logoBase64 = `data:image/png;base64,${logoBuffer.toString(
-      "base64"
-    )}`;
-
-    // Pasar logo al componente PDF
-    const document = <DietPdf diet={diet} logo={logoBase64} />;
+    const document = (
+      <DietPdf
+        diet={diet}
+        logo={logoUrl}
+      />
+    );
 
     const blob = await pdf(document).toBlob();
 

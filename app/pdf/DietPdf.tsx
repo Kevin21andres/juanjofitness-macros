@@ -14,7 +14,7 @@ import { formatEggAmount } from "@/lib/formatEggAmount";
    COLORES CORPORATIVOS
 ========================= */
 const COLORS = {
-  accent: "#01152aff",
+  accent: "#01152a",
   accentDark: "#1E3A8A",
   protein: "#22C55E",
   carbs: "#F59E0B",
