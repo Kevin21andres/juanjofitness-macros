@@ -2,6 +2,7 @@
 import {
   Document,
   Page,
+  Image,
   Text,
   View,
   StyleSheet,
@@ -13,7 +14,7 @@ import { formatEggAmount } from "@/lib/formatEggAmount";
    COLORES CORPORATIVOS
 ========================= */
 const COLORS = {
-  accent: "#1E90FF",
+  accent: "#01152aff",
   accentDark: "#1E3A8A",
   protein: "#22C55E",
   carbs: "#F59E0B",
@@ -176,6 +177,7 @@ const styles = StyleSheet.create({
 ========================= */
 type Props = {
   diet: SharedDiet;
+  logo: string;
 };
 
 /* =========================
@@ -218,7 +220,7 @@ function MacroBar({
 /* =========================
    PDF
 ========================= */
-export default function DietPdf({ diet }: Props) {
+export default function DietPdf({ diet, logo}: Props) {
   const totalMacros =
     diet.totals.protein +
     diet.totals.carbs +
@@ -229,6 +231,10 @@ export default function DietPdf({ diet }: Props) {
       <Page style={styles.page}>
         {/* HERO */}
         <View style={styles.hero}>
+          <Image
+            src={logo}
+            style={{ width: 120, marginBottom: 10 }}
+          />
           <Text style={styles.heroTitle}>
             Plan Nutricional
           </Text>
