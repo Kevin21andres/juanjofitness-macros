@@ -18,7 +18,7 @@ function CalculatorLoading() {
       aria-live="polite"
     >
       <p className="text-white text-sm animate-pulse">
-        ⏳ Cargando calculadora…
+        Cargando calculadora…
       </p>
     </div>
   );

@@ -30,7 +30,7 @@ export async function proxy(req: NextRequest) {
 
   const pathname = req.nextUrl.pathname;
 
-  // ✅ RUTAS PÚBLICAS
+  //RUTAS PÚBLICAS
   if (
     pathname === "/login" ||
     pathname.startsWith("/share/diet") ||
@@ -39,7 +39,7 @@ export async function proxy(req: NextRequest) {
     return res;
   }
 
-  // ❌ Sin sesión → login
+  //Sin sesión → login
   if (!session) {
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = "/login";
@@ -51,6 +51,6 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(png|jpg|jpeg|svg|webp|gif|ico)$).*)",
   ],
 };
