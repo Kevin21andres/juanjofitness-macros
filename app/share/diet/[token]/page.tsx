@@ -1,7 +1,32 @@
 // app/share/diet/[token]/page.tsx
+
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
 import { getSharedDietByToken } from "@/lib/dietsApi";
 import { formatEggAmount } from "@/lib/formatEggAmount";
+
+/* =========================
+   SEGURIDAD / CACHÉ
+========================= */
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+/*
+ * Las URLs compartidas contienen un token de acceso.
+ * No deben indexarse, almacenarse en buscadores
+ * ni enviarse como Referer a otros sitios.
+ */
+export const metadata: Metadata = {
+  robots:
+    "noindex, nofollow, noarchive, nosnippet, noimageindex",
+  referrer: "no-referrer",
+};
+
+/* =========================
+   PÁGINA PÚBLICA
+========================= */
 
 export default async function SharedDietPage({
   params,
@@ -10,8 +35,12 @@ export default async function SharedDietPage({
 }) {
   const { token } = await params;
 
-  const sharedDiet = await getSharedDietByToken(token);
-  if (!sharedDiet) notFound();
+  const sharedDiet =
+    await getSharedDietByToken(token);
+
+  if (!sharedDiet) {
+    notFound();
+  }
 
   const { diet } = sharedDiet;
 
@@ -49,10 +78,25 @@ export default async function SharedDietPage({
 
           {/* TOTALES */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <Stat label="Energía" value={`${diet.totals.kcal} kcal`} />
-            <Stat label="Proteína" value={`${diet.totals.protein} g`} />
-            <Stat label="Carbohidratos" value={`${diet.totals.carbs} g`} />
-            <Stat label="Grasas" value={`${diet.totals.fat} g`} />
+            <Stat
+              label="Energía"
+              value={`${diet.totals.kcal} kcal`}
+            />
+
+            <Stat
+              label="Proteína"
+              value={`${diet.totals.protein} g`}
+            />
+
+            <Stat
+              label="Carbohidratos"
+              value={`${diet.totals.carbs} g`}
+            />
+
+            <Stat
+              label="Grasas"
+              value={`${diet.totals.fat} g`}
+            />
           </div>
         </header>
 
@@ -71,15 +115,25 @@ export default async function SharedDietPage({
 
         {/* COMIDAS */}
         <section className="space-y-6">
-          {diet.meals
-            .sort((a, b) => a.meal_index - b.meal_index)
+          {[...diet.meals]
+            .sort(
+              (a, b) =>
+                a.meal_index -
+                b.meal_index
+            )
             .map((meal) => {
-              const mainItems = meal.items.filter(
-                (i) => i.role === "main"
-              );
-              const substitutes = meal.items.filter(
-                (i) => i.role === "substitute"
-              );
+              const mainItems =
+                meal.items.filter(
+                  (item) =>
+                    item.role === "main"
+                );
+
+              const substitutes =
+                meal.items.filter(
+                  (item) =>
+                    item.role ===
+                    "substitute"
+                );
 
               return (
                 <div
@@ -87,7 +141,8 @@ export default async function SharedDietPage({
                   className="rounded-2xl border border-white/10 bg-[#111]/80 backdrop-blur-xl shadow-lg p-6 space-y-4"
                 >
                   <h2 className="text-sm font-medium flex items-center gap-2 text-[var(--color-accent)]">
-                    🍽️ Comida {meal.meal_index + 1}
+                    🍽️ Comida{" "}
+                    {meal.meal_index + 1}
                   </h2>
 
                   {meal.notes?.trim() && (
@@ -96,76 +151,124 @@ export default async function SharedDietPage({
                     </div>
                   )}
 
-                  {mainItems.length === 0 ? (
+                  {mainItems.length ===
+                  0 ? (
                     <p className="text-white/40 italic">
                       Sin alimentos asignados
                     </p>
                   ) : (
                     <ul className="space-y-2 text-sm">
-                      {mainItems.map((item) => {
-                        const subs = substitutes.filter(
-                          (s) => s.parent_item_id === item.id
-                        );
+                      {mainItems.map(
+                        (item) => {
+                          const subs =
+                            substitutes.filter(
+                              (substitute) =>
+                                substitute.parent_item_id ===
+                                item.id
+                            );
 
-                        return (
-                          <li key={item.id}>
-                            <div className="flex justify-between items-center py-2 border-b border-white/10">
-                              <span className="text-white/90">
-                                {item.food.name}
-                              </span>
-                              <span className="text-white/50 text-xs">
-                                {formatEggAmount(
-                                  item.food.name,
-                                  item.grams
-                                )}
-                              </span>
-                            </div>
+                          return (
+                            <li
+                              key={
+                                item.id
+                              }
+                            >
+                              <div className="flex justify-between items-center py-2 border-b border-white/10">
+                                <span className="text-white/90">
+                                  {
+                                    item
+                                      .food
+                                      .name
+                                  }
+                                </span>
 
-                            {subs.length > 0 && (
-                              <ul className="mt-1 ml-4 space-y-1">
-                                {subs.map((sub) => (
-                                  <li
-                                    key={sub.id}
-                                    className="flex justify-between items-center text-xs text-white/60 italic"
-                                  >
-                                    <span>
-                                      ↳ {sub.food.name}
-                                    </span>
-                                    <span>
-                                      {formatEggAmount(
-                                        sub.food.name,
-                                        sub.grams
-                                      )}
-                                    </span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </li>
-                        );
-                      })}
+                                <span className="text-white/50 text-xs">
+                                  {formatEggAmount(
+                                    item.food
+                                      .name,
+                                    item.grams
+                                  )}
+                                </span>
+                              </div>
+
+                              {subs.length >
+                                0 && (
+                                <ul className="mt-1 ml-4 space-y-1">
+                                  {subs.map(
+                                    (
+                                      sub
+                                    ) => (
+                                      <li
+                                        key={
+                                          sub.id
+                                        }
+                                        className="flex justify-between items-center text-xs text-white/60 italic"
+                                      >
+                                        <span>
+                                          ↳{" "}
+                                          {
+                                            sub
+                                              .food
+                                              .name
+                                          }
+                                        </span>
+
+                                        <span>
+                                          {formatEggAmount(
+                                            sub
+                                              .food
+                                              .name,
+                                            sub.grams
+                                          )}
+                                        </span>
+                                      </li>
+                                    )
+                                  )}
+                                </ul>
+                              )}
+                            </li>
+                          );
+                        }
+                      )}
                     </ul>
                   )}
 
-                  {meal.supplements?.length > 0 && (
+                  {meal.supplements
+                    ?.length > 0 && (
                     <div className="pt-4 border-t border-white/10 space-y-2">
                       <p className="text-xs font-semibold text-white/60">
                         💊 Suplementación
                       </p>
 
                       <ul className="space-y-1 text-sm">
-                        {meal.supplements.map((s) => (
-                          <li
-                            key={s.id}
-                            className="flex justify-between items-center text-white/80"
-                          >
-                            <span>{s.name}</span>
-                            <span className="text-white/50 text-xs">
-                              {s.amount}
-                              {s.unit ? ` ${s.unit}` : ""}
-                            </span>
-                          </li>
-                        ))}
+                        {meal.supplements.map(
+                          (
+                            supplement
+                          ) => (
+                            <li
+                              key={
+                                supplement.id
+                              }
+                              className="flex justify-between items-center text-white/80"
+                            >
+                              <span>
+                                {
+                                  supplement.name
+                                }
+                              </span>
+
+                              <span className="text-white/50 text-xs">
+                                {
+                                  supplement.amount
+                                }
+
+                                {supplement.unit
+                                  ? ` ${supplement.unit}`
+                                  : ""}
+                              </span>
+                            </li>
+                          )
+                        )}
                       </ul>
                     </div>
                   )}
@@ -189,6 +292,7 @@ export default async function SharedDietPage({
 /* =========================
    STAT
 ========================= */
+
 function Stat({
   label,
   value,
@@ -201,6 +305,7 @@ function Stat({
       <p className="text-[11px] uppercase tracking-wide text-white/40">
         {label}
       </p>
+
       <p className="text-sm font-semibold text-[var(--color-accent)]">
         {value}
       </p>
