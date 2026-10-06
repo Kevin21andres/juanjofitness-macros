@@ -1,4 +1,4 @@
-//app/lib/dietsApi.ts
+// app/lib/dietsApi.ts
 import { supabase } from "./supabaseClient";
 import { DietSupplement } from "./dietSupplementsApi";
 
@@ -36,7 +36,7 @@ export type DietItem = {
 export type DietMeal = {
   id: string;
   meal_index: number;
-  notes: string | null; // 👈 AÑADIR ESTO
+  notes: string | null;
   items: DietItem[];
   supplements: DietSupplement[];
 };
@@ -65,6 +65,32 @@ export type SharedDiet = {
   notes: string | null;
 };
 
+/*
+ * Estructura devuelta por la RPC segura get_shared_diet().
+ *
+ * Este tipo no se exporta porque únicamente representa
+ * la respuesta interna de Supabase antes de convertirla
+ * al modelo SharedDiet usado por la aplicación.
+ */
+type SharedDietRpcResult = {
+  id: string;
+  name: string;
+  notes: string | null;
+  meals: {
+    id: string;
+    meal_index: number;
+    notes: string | null;
+    items: {
+      id: string;
+      grams: number;
+      role: "main" | "substitute";
+      parent_item_id: string | null;
+      food: Food;
+    }[];
+    supplements: DietSupplement[];
+  }[];
+};
+
 /* =========================
    UTILIDAD: CALCULAR MACROS
    → SOLO ITEMS PRINCIPALES
@@ -86,9 +112,15 @@ export function calculateDietTotals(
         acc.carbs += f.carbs_100 * factor;
         acc.fat += f.fat_100 * factor;
       });
+
       return acc;
     },
-    { kcal: 0, protein: 0, carbs: 0, fat: 0 }
+    {
+      kcal: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+    }
   );
 }
 
@@ -104,7 +136,9 @@ export async function createDietVersion(params: {
 }) {
   await supabase
     .from("diets")
-    .update({ is_active: false })
+    .update({
+      is_active: false,
+    })
     .eq("client_id", params.clientId)
     .eq("is_active", true);
 
@@ -120,7 +154,10 @@ export async function createDietVersion(params: {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
+
   return data as Diet;
 }
 
@@ -136,10 +173,15 @@ export async function getActiveDiet(
     .select("*")
     .eq("client_id", clientId)
     .eq("is_active", true)
-    .order("created_at", { ascending: false })
+    .order("created_at", {
+      ascending: false,
+    })
     .limit(1);
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
+
   return data?.[0] ?? null;
 }
 
@@ -154,9 +196,14 @@ export async function getDietHistory(
     .from("diets")
     .select("*")
     .eq("client_id", clientId)
-    .order("created_at", { ascending: false });
+    .order("created_at", {
+      ascending: false,
+    });
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
+
   return data ?? [];
 }
 
@@ -210,21 +257,40 @@ export async function getDietDetail(
     .eq("id", dietId)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    return null;
+  }
 
-  const meals: DietMeal[] = data.diet_meals.map((meal: any) => ({
-    id: meal.id,
-    meal_index: meal.meal_index,
-    notes: meal.notes ?? null,
-    items: meal.diet_items.map((item: any) => ({
-      id: item.id,
-      grams: item.grams,
-      role: item.role,
-      parent_item_id: item.parent_item_id,
-      food: item.foods,
-    })),
-    supplements: meal.diet_supplements ?? [],
-  }));
+  const meals: DietMeal[] = data.diet_meals.map(
+    (meal) => ({
+      id: meal.id,
+      meal_index: meal.meal_index,
+      notes: meal.notes ?? null,
+
+      items: meal.diet_items.map((item) => {
+        const food = Array.isArray(item.foods)
+          ? item.foods[0]
+          : item.foods;
+
+        if (!food) {
+          throw new Error(
+            `No se encontró el alimento asociado al item ${item.id}`
+          );
+        }
+
+        return {
+          id: item.id,
+          grams: item.grams,
+          role: item.role,
+          parent_item_id: item.parent_item_id,
+          food,
+        };
+      }),
+
+      supplements:
+        meal.diet_supplements ?? [],
+    })
+  );
 
   const totals = calculateDietTotals(meals);
 
@@ -233,98 +299,135 @@ export async function getDietDetail(
     meals,
     totals: {
       kcal: Math.round(totals.kcal),
-      protein: Number(totals.protein.toFixed(1)),
-      carbs: Number(totals.carbs.toFixed(1)),
-      fat: Number(totals.fat.toFixed(1)),
+      protein: Number(
+        totals.protein.toFixed(1)
+      ),
+      carbs: Number(
+        totals.carbs.toFixed(1)
+      ),
+      fat: Number(
+        totals.fat.toFixed(1)
+      ),
     },
   };
 }
 
 /* =========================
    SHARE: DIETA POR TOKEN
+   → Acceso mediante RPC segura
+   → Sin SELECT directo a tablas
 ========================= */
 
 export async function getSharedDietByToken(
   token: string
 ): Promise<{ diet: SharedDiet } | null> {
-  const { data, error } = await supabase
-    .from("diet_shares")
-    .select(`
-      diet_id,
-      is_active,
-      expires_at,
-      diet:diets!diet_shares_diet_id_fkey (
-        id,
-        name,
-        notes,
-        diet_meals (
-          id,
-          meal_index,
-          notes,
-          diet_items (
-            id,
-            grams,
-            role,
-            parent_item_id,
-            foods (
-              id,
-              name,
-              kcal_100,
-              protein_100,
-              carbs_100,
-              fat_100
-            )
-          ),
-          diet_supplements (
-            id,
-            meal_id,
-            name,
-            amount,
-            unit,
-            timing,
-            notes,
-            created_at
-          )
-        )
-      )
-    `)
-    .eq("token", token)
-    .eq("is_active", true)
-    .maybeSingle();
+  const cleanToken = token.trim();
 
-  if (error || !data) return null;
-  if (data.expires_at && new Date(data.expires_at) < new Date()) return null;
+  /*
+   * Los tokens generados actualmente son UUID.
+   * Este límite evita enviar valores absurdos a la RPC
+   * sin acoplar la aplicación estrictamente al formato UUID.
+   */
+  if (
+    cleanToken.length < 20 ||
+    cleanToken.length > 200
+  ) {
+    return null;
+  }
 
-  const diet = Array.isArray(data.diet) ? data.diet[0] : data.diet;
-  if (!diet) return null;
+  const { data, error } = await supabase.rpc(
+    "get_shared_diet",
+    {
+      p_token: cleanToken,
+    }
+  );
 
-  const meals: DietMeal[] = diet.diet_meals.map((meal: any) => ({
-    id: meal.id,
-    meal_index: meal.meal_index,
-    notes: meal.notes ?? null,
-    items: meal.diet_items.map((item: any) => ({
-      id: item.id,
-      grams: item.grams,
-      role: item.role,
-      parent_item_id: item.parent_item_id,
-      food: item.foods,
-    })),
-    supplements: meal.diet_supplements ?? [],
-  }));
+  if (error) {
+    console.error(
+      "getSharedDietByToken error:",
+      error
+    );
 
-  const totals = calculateDietTotals(meals);
+    return null;
+  }
+
+  /*
+   * La RPC devuelve NULL cuando:
+   * - el token no existe;
+   * - está desactivado;
+   * - ha expirado.
+   */
+  if (
+    !data ||
+    typeof data !== "object" ||
+    Array.isArray(data)
+  ) {
+    return null;
+  }
+
+  const rawDiet =
+    data as SharedDietRpcResult;
+
+  /*
+   * Validación básica de la respuesta antes
+   * de utilizarla en la aplicación.
+   */
+  if (
+    typeof rawDiet.id !== "string" ||
+    typeof rawDiet.name !== "string" ||
+    !Array.isArray(rawDiet.meals)
+  ) {
+    return null;
+  }
+
+  const meals: DietMeal[] =
+    rawDiet.meals.map((meal) => ({
+      id: meal.id,
+      meal_index: meal.meal_index,
+      notes: meal.notes ?? null,
+
+      items: (meal.items ?? []).map(
+        (item) => ({
+          id: item.id,
+          grams: item.grams,
+          role: item.role,
+          parent_item_id:
+            item.parent_item_id ?? null,
+          food: item.food,
+        })
+      ),
+
+      supplements:
+        meal.supplements ?? [],
+    }));
+
+  const totals =
+    calculateDietTotals(meals);
 
   return {
     diet: {
-      id: diet.id,
-      name: diet.name,
-      notes: diet.notes ?? null,
+      id: rawDiet.id,
+      name: rawDiet.name,
+      notes:
+        rawDiet.notes ?? null,
       meals,
+
       totals: {
-        kcal: Math.round(totals.kcal),
-        protein: Number(totals.protein.toFixed(1)),
-        carbs: Number(totals.carbs.toFixed(1)),
-        fat: Number(totals.fat.toFixed(1)),
+        kcal: Math.round(
+          totals.kcal
+        ),
+
+        protein: Number(
+          totals.protein.toFixed(1)
+        ),
+
+        carbs: Number(
+          totals.carbs.toFixed(1)
+        ),
+
+        fat: Number(
+          totals.fat.toFixed(1)
+        ),
       },
     },
   };
@@ -360,29 +463,59 @@ export async function getDietCloneData(
     }[];
   }[];
 } | null> {
-  const diet = await getDietDetail(dietId);
-  if (!diet) return null;
+  const diet =
+    await getDietDetail(dietId);
+
+  if (!diet) {
+    return null;
+  }
 
   return {
     name: diet.name,
     notes: diet.notes,
-    meals: diet.meals.map((meal) => ({
-      meal_index: meal.meal_index,
-      notes: meal.notes ?? null,
-      items: meal.items.map((item) => ({
-        id: item.id,
-        food_id: item.food.id,
-        grams: item.grams,
-        role: item.role,
-        parent_item_id: item.parent_item_id,
-      })),
-      supplements: meal.supplements.map((s) => ({
-        name: s.name,
-        amount: s.amount,
-        unit: s.unit,
-        timing: s.timing,
-        notes: s.notes,
-      })),
-    })),
+
+    meals: diet.meals.map(
+      (meal) => ({
+        meal_index:
+          meal.meal_index,
+
+        notes:
+          meal.notes ?? null,
+
+        items: meal.items.map(
+          (item) => ({
+            id: item.id,
+            food_id:
+              item.food.id,
+            grams:
+              item.grams,
+            role:
+              item.role,
+            parent_item_id:
+              item.parent_item_id,
+          })
+        ),
+
+        supplements:
+          meal.supplements.map(
+            (supplement) => ({
+              name:
+                supplement.name,
+
+              amount:
+                supplement.amount,
+
+              unit:
+                supplement.unit,
+
+              timing:
+                supplement.timing,
+
+              notes:
+                supplement.notes,
+            })
+          ),
+      })
+    ),
   };
 }

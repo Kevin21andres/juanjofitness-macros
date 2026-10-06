@@ -1,5 +1,5 @@
 // lib/dietsShare.ts
-/* ========================= 
+/* =========================
    COMPARTIR DIETAS (TOKEN)
 ========================= */
 
@@ -36,7 +36,7 @@ function getBaseUrl() {
     return window.location.origin;
   }
 
-  // para SSR / Vercel
+  // Para SSR / Vercel
   return process.env.NEXT_PUBLIC_SITE_URL ?? "";
 }
 
@@ -51,62 +51,42 @@ export function getDietShareUrl(token: string) {
 
 /* =========================
    CREAR / REUTILIZAR SHARE
+   → La generación, validación,
+     reutilización y expiración
+     se gestionan en Supabase.
 ========================= */
 
 export async function createDietShare({
   dietId,
   channel,
   sentTo,
-}: CreateDietShareParams) {
-  const now = new Date().toISOString();
+}: CreateDietShareParams): Promise<{ token: string }> {
+  const { data, error } = await supabase.rpc("create_diet_share", {
+    p_diet_id: dietId,
+    p_channel: channel,
+    p_sent_to: sentTo,
+  });
 
-  const { data: existing, error: selectError } = await supabase
-    .from("diet_shares")
-    .select("token")
-    .eq("diet_id", dietId)
-    .eq("channel", channel)
-    .eq("sent_to", sentTo)
-    .eq("is_active", true)
-    .gt("expires_at", now)
-    .maybeSingle();
+  if (error) {
+  console.error("❌ Error creando diet_share:", {
+    code: error.code,
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+  });
 
-  if (selectError) {
-    console.error("❌ Error buscando diet_share existente:", selectError);
+  throw new Error(
+    `No se pudo crear el enlace de la dieta: ${error.message}`
+  );
+}
+
+  if (typeof data !== "string" || data.trim().length === 0) {
+    throw new Error("No se recibió un token válido.");
   }
 
-  if (existing?.token) {
-    console.log("♻️ Reutilizando token existente:", existing.token);
-    return { token: existing.token };
-  }
-
-  const token =
-    typeof crypto !== "undefined" && crypto.randomUUID
-      ? crypto.randomUUID()
-      : Math.random().toString(36).substring(2, 15);
-
-  const expiresAt = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 días
-  ).toISOString();
-
-  const { error: insertError } = await supabase
-    .from("diet_shares")
-    .insert({
-      diet_id: dietId,
-      token,
-      channel,
-      sent_to: sentTo,
-      is_active: true,
-      expires_at: expiresAt,
-    });
-
-  if (insertError) {
-    console.error("❌ Error insertando diet_share:", insertError);
-    throw insertError;
-  }
-
-  console.log("✅ Nuevo diet_share creado:", token);
-
-  return { token };
+  return {
+    token: data,
+  };
 }
 
 /* =========================
@@ -127,7 +107,7 @@ export async function shareDietByWhatsApp({
   const message = `
 Hola ${clientName}
 Te dejo tu plan nutricional.
- ${url}
+${url}
 Cualquier duda me dices
   `.trim();
 
@@ -153,9 +133,7 @@ export async function shareDietByEmail({
 
   const url = getDietShareUrl(shareToken);
 
-  const subject = encodeURIComponent(
-    "Tu plan nutricional"
-  );
+  const subject = encodeURIComponent("Tu plan nutricional");
 
   const body = encodeURIComponent(`
 Hola ${clientName},
