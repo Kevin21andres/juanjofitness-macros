@@ -35,12 +35,19 @@ export default function CalculatorClient() {
     useState<ClientWithDiet | null>(null);
   const [query, setQuery] = useState("");
 
-  const [initialDiet, setInitialDiet] =
-    useState<CloneDietData | null>(null);
+  const [cloneResult, setCloneResult] = useState<{
+    dietId: string;
+    clientId: string;
+    data: CloneDietData | null;
+    error: string | null;
+  } | null>(null);
 
   const [savedDietId, setSavedDietId] = useState<string | null>(null);
   const [savedDiet, setSavedDiet] = useState<DietDetail | null>(null);
-  const [loadingDiet, setLoadingDiet] = useState(false);
+  const [savedDietError, setSavedDietError] = useState<string | null>(null);
+  const loadingDiet = Boolean(
+    savedDietId && savedDiet?.id !== savedDietId && !savedDietError
+  );
 
   /* =========================
      CARGAR CLIENTES
@@ -83,27 +90,53 @@ export default function CalculatorClient() {
 
   /* =========================
      CARGAR DIETA A CLONAR
+
+     El formulario NO se monta hasta resolver el clon.
+     La respuesta se vincula al ID de dieta y al cliente
+     de la URL para evitar reutilizar resultados antiguos.
   ========================= */
   useEffect(() => {
-    if (!cloneDietId) return;
+    if (!cloneDietId || !clientIdFromUrl) return;
 
     let mounted = true;
-    setLoadingDiet(true);
 
     getDietCloneData(cloneDietId)
       .then((clone) => {
-        if (mounted && clone) {
-          setInitialDiet(clone);
+        if (!mounted) return;
+
+        if (!clone || clone.sourceClientId !== clientIdFromUrl) {
+          setCloneResult({
+            dietId: cloneDietId,
+            clientId: clientIdFromUrl,
+            data: null,
+            error: "No se puede clonar esta dieta para el cliente seleccionado.",
+          });
+          return;
         }
+
+        setCloneResult({
+          dietId: cloneDietId,
+          clientId: clientIdFromUrl,
+          data: clone,
+          error: null,
+        });
       })
-      .finally(() => {
-        if (mounted) setLoadingDiet(false);
+      .catch((error) => {
+        console.error("Error cargando dieta a clonar:", error);
+        if (mounted) {
+          setCloneResult({
+            dietId: cloneDietId,
+            clientId: clientIdFromUrl,
+            data: null,
+            error: "Error cargando la dieta a clonar.",
+          });
+        }
       });
 
     return () => {
       mounted = false;
     };
-  }, [cloneDietId]);
+  }, [cloneDietId, clientIdFromUrl]);
 
   /* =========================
      CARGAR DIETA TRAS GUARDAR
@@ -112,20 +145,45 @@ export default function CalculatorClient() {
     if (!savedDietId) return;
 
     let mounted = true;
-    setLoadingDiet(true);
 
     getDietDetail(savedDietId)
       .then((diet) => {
-        if (mounted) setSavedDiet(diet);
+        if (!mounted) return;
+        if (!diet) {
+          setSavedDietError("La dieta se guardó, pero no se pudo cargar su detalle.");
+          return;
+        }
+        setSavedDiet(diet);
       })
-      .finally(() => {
-        if (mounted) setLoadingDiet(false);
+      .catch((loadError) => {
+        if (!mounted) return;
+        console.error("Error cargando la dieta guardada:", loadError);
+        setSavedDietError("La dieta se guardó, pero no se pudo cargar su detalle.");
       });
 
     return () => {
       mounted = false;
     };
   }, [savedDietId]);
+
+  const cloningSelectedClient = Boolean(
+    selectedClient &&
+      cloneDietId &&
+      selectedClient.id === clientIdFromUrl
+  );
+
+  const cloneResolved = Boolean(
+    cloneResult &&
+      cloneResult.dietId === cloneDietId &&
+      cloneResult.clientId === clientIdFromUrl
+  );
+
+  const initialDiet =
+    cloningSelectedClient && cloneResolved
+      ? cloneResult?.data ?? null
+      : null;
+
+  const loadingClone = cloningSelectedClient && !cloneResolved;
 
   /* =========================
      FILTRADO CLIENTES
@@ -177,7 +235,6 @@ export default function CalculatorClient() {
             setSelectedClient(null);
             setSavedDiet(null);
             setSavedDietId(null);
-            setInitialDiet(null);
           }}
           disabled={loadingClients}
         />
@@ -229,12 +286,32 @@ export default function CalculatorClient() {
       </section>
 
       {/* CALCULADORA */}
-      {selectedClient && !savedDietId && (
+      {savedDietError && savedDietId && selectedClient && (
+        <div role="alert" className="space-y-2 text-sm text-red-400">
+          <p>{savedDietError}</p>
+          <Link
+            href={`/clients/${selectedClient.id}/diet/${savedDietId}`}
+            className="text-[var(--color-accent)] underline"
+          >
+            Abrir la dieta guardada
+          </Link>
+        </div>
+      )}
+      {cloningSelectedClient && cloneResolved && cloneResult?.error && (
+        <p className="text-sm text-red-400">{cloneResult.error}</p>
+      )}
+
+      {selectedClient && !savedDietId && (!cloningSelectedClient || initialDiet) && (
         <DietPlanner
+          key={`${selectedClient.id}:${cloningSelectedClient ? cloneDietId : "new"}`}
           clientId={selectedClient.id}
           clientName={selectedClient.name}
           initialDiet={initialDiet}
-          onSaved={(dietId) => setSavedDietId(dietId)}
+          onSaved={(dietId) => {
+            setSavedDietError(null);
+            setSavedDiet(null);
+            setSavedDietId(dietId);
+          }}
         />
       )}
 
@@ -253,7 +330,7 @@ export default function CalculatorClient() {
       )}
 
       {/* LOADING OVERLAY */}
-      {loadingDiet && (
+      {(loadingDiet || loadingClone) && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
           <div className="rounded-xl border border-white/10 bg-[#111]/80 px-6 py-4 shadow-xl">
             <p className="text-sm text-white">

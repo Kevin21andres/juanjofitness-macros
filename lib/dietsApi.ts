@@ -741,6 +741,7 @@ export async function getSharedDietByToken(
 export async function getDietCloneData(
   dietId: string
 ): Promise<{
+  sourceClientId: string;
   name: string;
   notes: string | null;
 
@@ -787,6 +788,9 @@ export async function getDietCloneData(
   }
 
   return {
+    sourceClientId:
+      diet.client_id,
+
     name:
       diet.name,
 

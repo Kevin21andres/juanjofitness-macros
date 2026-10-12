@@ -85,6 +85,68 @@ function generateDietName(
 }
 
 /* =========================
+   ESTADO INICIAL DEL CLON
+
+   Los datos deben estar disponibles desde el primer
+   render. FoodCalculator inicializa su estado una vez;
+   no podemos rellenar estos valores posteriormente
+   con un useEffect del componente padre.
+========================= */
+
+function initialCloneItems(
+  initialDiet: CloneDietData | null
+): Record<number, Item[]> {
+  const result: Record<number, Item[]> = {};
+
+  initialDiet?.meals.forEach((meal) => {
+    result[meal.meal_index] = meal.items.map((item, index) => ({
+      // FoodCalculator genera los UUID nuevos y conserva
+      // la relación entre principales y sustituciones.
+      id: item.id ?? `clone-item-${meal.meal_index}-${index}`,
+      foodId: item.food_id,
+      grams: item.grams,
+      role: item.role,
+      parentItemId: item.parent_item_id ?? undefined,
+    }));
+  });
+
+  return result;
+}
+
+function initialCloneSupplements(
+  initialDiet: CloneDietData | null
+): Record<number, SupplementItem[]> {
+  const result: Record<number, SupplementItem[]> = {};
+
+  initialDiet?.meals.forEach((meal) => {
+    result[meal.meal_index] = (meal.supplements ?? []).map(
+      (supplement, index) => ({
+        id: `clone-supplement-${meal.meal_index}-${index}`,
+        name: supplement.name,
+        amount: supplement.amount ?? undefined,
+        unit: supplement.unit ?? undefined,
+        timing: supplement.timing ?? undefined,
+        notes: supplement.notes ?? undefined,
+      })
+    );
+  });
+
+  return result;
+}
+
+function initialCloneNotes(
+  initialDiet: CloneDietData | null
+): Record<number, string> {
+  const result: Record<number, string> = {};
+
+  initialDiet?.meals.forEach((meal) => {
+    result[meal.meal_index] = meal.notes ?? "";
+  });
+
+  return result;
+}
+
+/* =========================
    COMPONENTE
 ========================= */
 
@@ -97,28 +159,28 @@ export default function DietPlanner({
   const [
     mealsCount,
     setMealsCount,
-  ] = useState(5);
+  ] = useState(initialDiet?.meals.length ?? 5);
 
   const [
     mealsItems,
     setMealsItems,
   ] = useState<
     Record<number, Item[]>
-  >({});
+  >(() => initialCloneItems(initialDiet));
 
   const [
     mealsSupplements,
     setMealsSupplements,
   ] = useState<
     Record<number, SupplementItem[]>
-  >({});
+  >(() => initialCloneSupplements(initialDiet));
 
   const [
     mealsNotes,
     setMealsNotes,
   ] = useState<
     Record<number, string>
-  >({});
+  >(() => initialCloneNotes(initialDiet));
 
   const [
     foods,
@@ -138,7 +200,7 @@ export default function DietPlanner({
   const [
     notes,
     setNotes,
-  ] = useState("");
+  ] = useState(initialDiet?.notes ?? "");
 
   /* =============================
      CARGAR ALIMENTOS
@@ -163,144 +225,6 @@ export default function DietPlanner({
       mounted = false;
     };
   }, []);
-
-  /* =============================
-     PRECARGAR DIETA (CLON)
-  ============================== */
-
-  useEffect(() => {
-    if (!initialDiet) {
-      return;
-    }
-
-    setMealsCount(
-      initialDiet.meals.length
-    );
-
-    setNotes(
-      initialDiet.notes ?? ""
-    );
-
-    const items: Record<
-      number,
-      Item[]
-    > = {};
-
-    const supplements: Record<
-      number,
-      SupplementItem[]
-    > = {};
-
-    const notesByMeal: Record<
-      number,
-      string
-    > = {};
-
-    initialDiet.meals.forEach(
-      (meal) => {
-        /*
-         * Mapa:
-         *
-         * UUID del item antiguo
-         *      ↓
-         * UUID temporal del frontend
-         *
-         * Esto permite mantener correctamente
-         * la relación principal → sustitución
-         * al clonar una dieta.
-         */
-        const idMap =
-          new Map<
-            string,
-            string
-          >();
-
-        meal.items.forEach(
-          (item) => {
-            if (item.id) {
-              idMap.set(
-                item.id,
-                crypto.randomUUID()
-              );
-            }
-          }
-        );
-
-        items[
-          meal.meal_index
-        ] = meal.items.map(
-          (item) => ({
-            id:
-              item.id
-                ? idMap.get(
-                    item.id
-                  )!
-                : crypto.randomUUID(),
-
-            foodId:
-              item.food_id,
-
-            grams:
-              item.grams,
-
-            role:
-              item.role,
-
-            parentItemId:
-              item.parent_item_id
-                ? idMap.get(
-                    item.parent_item_id
-                  )
-                : undefined,
-          })
-        );
-
-        notesByMeal[
-          meal.meal_index
-        ] =
-          meal.notes ?? "";
-
-        supplements[
-          meal.meal_index
-        ] =
-          meal.supplements?.map(
-            (supplement) => ({
-              id:
-                crypto.randomUUID(),
-
-              name:
-                supplement.name,
-
-              amount:
-                supplement.amount ??
-                undefined,
-
-              unit:
-                supplement.unit ??
-                undefined,
-
-              timing:
-                supplement.timing ??
-                undefined,
-
-              notes:
-                supplement.notes ??
-                undefined,
-            })
-          ) ?? [];
-      }
-    );
-
-    setMealsItems(items);
-
-    setMealsSupplements(
-      supplements
-    );
-
-    setMealsNotes(
-      notesByMeal
-    );
-  }, [initialDiet]);
 
   /* =============================
      CALLBACK DESDE FoodCalculator
@@ -347,8 +271,9 @@ export default function DietPlanner({
 
   const totalDay: Totals =
     useMemo(() => {
-      return Object.values(
-        mealsItems
+      return Array.from(
+        { length: mealsCount },
+        (_, mealIndex) => mealsItems[mealIndex] ?? []
       ).reduce(
         (
           accumulated,
@@ -418,6 +343,7 @@ export default function DietPlanner({
     }, [
       mealsItems,
       foods,
+      mealsCount,
     ]);
 
   /* =============================
@@ -440,8 +366,9 @@ export default function DietPlanner({
        * completamente vacía.
        */
       const hasAnyMainFood =
-        Object.values(
-          mealsItems
+        Array.from(
+          { length: mealsCount },
+          (_, mealIndex) => mealsItems[mealIndex] ?? []
         ).some((items) =>
           items.some(
             (item) =>
@@ -668,6 +595,18 @@ export default function DietPlanner({
               };
             }
           );
+
+        /*
+         * Validamos exactamente el contenido serializado.
+         * Las comidas ocultas no cuentan para esta decisión.
+         */
+        if (
+          !meals.some((meal) =>
+            meal.items.some((item) => item.role === "main")
+          )
+        ) {
+          throw new Error("La dieta visible no contiene alimentos principales");
+        }
 
         /*
          * UNA ÚNICA llamada a Supabase.
